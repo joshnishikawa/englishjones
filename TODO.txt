@@ -80,7 +80,4 @@ Time Bomb: Pause for 3 seconds = die. Don't finish in 1 minute = die. Three stri
   superlative "
 
 
-
-
-
 Get audio samples for all static vocab
