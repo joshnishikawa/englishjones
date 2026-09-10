@@ -377,14 +377,16 @@ $(function(){
 
     const isHost = Boolean(room && room.hostId && player.id === room.hostId);
 
-    // Toggle host indicator for the local player only
+    // Toggle host indicator and host actions for the local player only
     if (isHost) {
       $("#hostBadge").removeClass("d-none");
+      $("#getName").removeClass("d-none");
       if (currentActivity) {
         $("#activityHostBadge").removeClass("d-none");
       }
     } else {
       $("#hostBadge").addClass("d-none");
+      $("#getName").addClass("d-none");
       $("#activityHostBadge").addClass("d-none");
     }
 
@@ -685,7 +687,11 @@ $(function(){
     $("#join").prop('disabled', true);
   });
 
-  $("#getName").on('click', getName);
+  $("#getName").on('click', function() {
+    const isHost = Boolean(room && room.hostId ? player.id === room.hostId : (player && player.number === 1));
+    if (!isHost) return;
+    getName();
+  });
 
   $("#color").on('change', function(){
     const color = $("#color").val();
@@ -934,11 +940,13 @@ $(function(){
       const isHost = Boolean(room && room.hostId && player.id === room.hostId);
       if (isHost) {
         $("#hostBadge").removeClass("d-none");
+        $("#getName").removeClass("d-none");
         if (currentActivity) {
           $("#activityHostBadge").removeClass("d-none");
         }
       } else {
         $("#hostBadge").addClass("d-none");
+        $("#getName").addClass("d-none");
         $("#activityHostBadge").addClass("d-none");
       }
     }

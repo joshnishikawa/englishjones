@@ -507,6 +507,7 @@ const multiplayer = (io, options = {}) => {
           if (room.hostId === id) {
             room.hostId = room.players[0].id;
           }
+          registerHostedActivityEvents.handlePlayerLeft(roomname, id, room.hostId);
           if (!room.players[0].activity) {
             room.roomtype = "private";
             room.activity = null;
@@ -527,6 +528,7 @@ const multiplayer = (io, options = {}) => {
           if (room.hostId === id) {
             room.hostId = room.players[0].id;
           }
+          registerHostedActivityEvents.handlePlayerLeft(roomname, id, room.hostId);
           io.to(roomname).emit("playerLeft", room.players);
           broadcastPublicRooms();
         }
@@ -541,6 +543,7 @@ const multiplayer = (io, options = {}) => {
           if (room.hostId === id) {
             room.hostId = room.players[0].id;
           }
+          registerHostedActivityEvents.handlePlayerLeft(roomname, id, room.hostId);
           io.to(roomname).emit("playerLeft", room.players);
         }
       }
@@ -627,29 +630,19 @@ const multiplayer = (io, options = {}) => {
 
       if (roomname && data.id) {
         // user is already in a room
-        if (publicRooms[roomname]) {
-          room = publicRooms[roomname];
-          for (let player of room.players) {
-            if (player.id === data.id) {
-              if (room.hostId === player.id) {
-                room.hostId = newName;
-              }
-              player.id = newName;
-              io.to(roomname).emit("setName", {
-                number: player.number,
-                id: player.id,
-              });
-              return;
-            }
+        room = publicRooms[roomname] || privateRooms[roomname];
+        if (room) {
+          const isHost = (room.hostId === data.id);
+          if (!isHost) {
+            socket.emit("error", { message: "Only the host can change their name." });
+            return;
           }
-        } else if (privateRooms[roomname]) {
-          room = privateRooms[roomname];
+          const oldId = data.id;
           for (let player of room.players) {
             if (player.id === data.id) {
-              if (room.hostId === player.id) {
-                room.hostId = newName;
-              }
+              room.hostId = newName;
               player.id = newName;
+              registerHostedActivityEvents.updateHostId(roomname, oldId, newName);
               io.to(roomname).emit("setName", {
                 number: player.number,
                 id: player.id,

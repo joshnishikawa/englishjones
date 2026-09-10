@@ -341,8 +341,40 @@ const raffleEvents = (io, socket, touchRoom) => {
   });
 };
 
+function handlePlayerLeft(roomname, playerId, newHostId) {
+  const state = raffleStates.get(roomname);
+  if (!state) return;
+  state.players.delete(playerId);
+  if (newHostId) {
+    state.hostId = newHostId;
+  }
+  // Keep numberSelections, emojiSelections, claimedEmojis intact for rejoin!
+}
+
+function updateHostId(roomname, oldHostId, newHostId) {
+  const state = raffleStates.get(roomname);
+  if (!state) return;
+  if (state.hostId === oldHostId) {
+    state.hostId = newHostId;
+  }
+  if (state.players.has(oldHostId)) {
+    const hostPlayer = state.players.get(oldHostId);
+    state.players.delete(oldHostId);
+    hostPlayer.id = newHostId;
+    state.players.set(newHostId, hostPlayer);
+  }
+  if (state.numberSelections.has(oldHostId)) {
+    const num = state.numberSelections.get(oldHostId);
+    state.numberSelections.delete(oldHostId);
+    state.numberSelections.set(newHostId, num);
+  }
+}
+
 raffleEvents.getOrCreateRaffleState = getOrCreateRaffleState;
 raffleEvents.clearRaffleState = clearRaffleState;
 raffleEvents.getTotalCount = getTotalCount;
+raffleEvents.handlePlayerLeft = handlePlayerLeft;
+raffleEvents.updateHostId = updateHostId;
 
 module.exports = raffleEvents;
+

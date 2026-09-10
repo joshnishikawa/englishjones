@@ -120,8 +120,18 @@
         playerTokensMap[p.id] = $token;
         $pawnLayer.append($token);
       }
-      if (playerPositionsMap[p.id] === undefined) {
-        playerPositionsMap[p.id] = null;
+      if (playerPositionsMap[p.id] === undefined || playerPositionsMap[p.id] === null) {
+        if (currentStage === 'numbers' && numberSelectionsMap[p.id]) {
+          playerPositionsMap[p.id] = `raffle-num-${numberSelectionsMap[p.id]}`;
+        } else if (currentStage === 'emojis') {
+          const claimedIdx = Object.keys(claimedEmojiMap).find((k) => claimedEmojiMap[k] === p.id);
+          playerPositionsMap[p.id] = claimedIdx !== undefined ? `raffle-emoji-${claimedIdx}` : null;
+        } else if (currentStage === 'revealed') {
+          const claimedIdx = Object.keys(claimedEmojiMap).find((k) => claimedEmojiMap[k] === p.id);
+          playerPositionsMap[p.id] = claimedIdx !== undefined ? `raffle-flip-${claimedIdx}` : null;
+        } else {
+          playerPositionsMap[p.id] = null;
+        }
       }
     });
 
@@ -501,6 +511,28 @@
       }
     });
 
+    currentSocket.on('playerLeft', function(data) {
+      const remaining = Array.isArray(data) ? data : (data && data.players ? data.players : []);
+      playersList = remaining;
+      syncPawnsForPlayers(playersList);
+    });
+
+    currentSocket.on('setName', function(data) {
+      if (!data || !data.id) return;
+      if (data.number === 1 || (currentRoom && currentRoom.hostId === data.id)) {
+        roomHostId = data.id;
+        if (currentPlayer) {
+          isHost = Boolean(currentPlayer.id === roomHostId);
+          if (isHost) {
+            $('#raffle-arena').addClass('host-view');
+          } else {
+            $('#raffle-arena').removeClass('host-view');
+          }
+          renderTopControls();
+        }
+      }
+    });
+
     currentSocket.on('raffle/sync', function(data) {
       if (!data) return;
       totalItemsCount = data.totalCount || 0;
@@ -716,6 +748,8 @@
     $('#activityControls').empty();
     if (socket) {
       socket.off('setColor');
+      socket.off('setName');
+      socket.off('playerLeft');
       socket.off('raffle/sync');
       socket.off('raffle/numberSelected');
       socket.off('raffle/stageChanged');

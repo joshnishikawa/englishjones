@@ -281,10 +281,47 @@ const voteEvents = (io, socket, touchRoom) => {
   });
 };
 
+function handlePlayerLeft(roomname, playerId, newHostId) {
+  const state = voteStates.get(roomname);
+  if (!state) return;
+  state.players.delete(playerId);
+  if (newHostId) {
+    state.hostId = newHostId;
+  }
+  // Keep numberSelections, userVotes intact for rejoin!
+}
+
+function updateHostId(roomname, oldHostId, newHostId) {
+  const state = voteStates.get(roomname);
+  if (!state) return;
+  if (state.hostId === oldHostId) {
+    state.hostId = newHostId;
+  }
+  if (state.players.has(oldHostId)) {
+    const hostPlayer = state.players.get(oldHostId);
+    state.players.delete(oldHostId);
+    hostPlayer.id = newHostId;
+    state.players.set(newHostId, hostPlayer);
+  }
+  if (state.numberSelections.has(oldHostId)) {
+    const num = state.numberSelections.get(oldHostId);
+    state.numberSelections.delete(oldHostId);
+    state.numberSelections.set(newHostId, num);
+  }
+  if (state.userVotes.has(oldHostId)) {
+    const votes = state.userVotes.get(oldHostId);
+    state.userVotes.delete(oldHostId);
+    state.userVotes.set(newHostId, votes);
+  }
+}
+
 voteEvents.getOrCreateVoteState = getOrCreateVoteState;
 voteEvents.clearVoteState = clearVoteState;
 voteEvents.calculateTotals = calculateTotals;
 voteEvents.buildResultsMatrix = buildResultsMatrix;
 voteEvents.getTotalCount = getTotalCount;
+voteEvents.handlePlayerLeft = handlePlayerLeft;
+voteEvents.updateHostId = updateHostId;
 
 module.exports = voteEvents;
+

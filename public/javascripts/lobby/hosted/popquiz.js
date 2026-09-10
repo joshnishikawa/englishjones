@@ -498,13 +498,20 @@
         const $token = createPlayerToken(p, scoresMap[p.id] || 0);
         $pawnLayer.append($token);
         playerTokensMap[p.id] = $token;
-        if (playerPositionsMap[p.id] === undefined) {
-          playerPositionsMap[p.id] = null;
+        if (playerPositionsMap[p.id] === undefined || playerPositionsMap[p.id] === null) {
+          if (currentStage === 'numbers' && numberSelectionsMap[p.id]) {
+            playerPositionsMap[p.id] = `popquiz-num-${numberSelectionsMap[p.id]}`;
+          } else {
+            playerPositionsMap[p.id] = null;
+          }
         }
       } else {
         const $score = playerTokensMap[p.id].find('.popquiz-token-score');
         if ($score.length && scoresMap[p.id] !== undefined) {
           $score.text(scoresMap[p.id]);
+        }
+        if (currentStage === 'numbers' && numberSelectionsMap[p.id] && (!playerPositionsMap[p.id] || playerPositionsMap[p.id] === null)) {
+          playerPositionsMap[p.id] = `popquiz-num-${numberSelectionsMap[p.id]}`;
         }
       }
     });
@@ -555,6 +562,28 @@
       if (!data) return;
       if (currentPlayer && (data.number === currentPlayer.number || data.id === currentPlayer.id)) {
         currentPlayer.color = data.color;
+      }
+    });
+
+    currentSocket.on('playerLeft', function(data) {
+      const remaining = Array.isArray(data) ? data : (data && data.players ? data.players : []);
+      playersList = remaining;
+      syncPawnsForPlayers(playersList);
+    });
+
+    currentSocket.on('setName', function(data) {
+      if (!data || !data.id) return;
+      if (data.number === 1 || (currentRoom && currentRoom.hostId === data.id)) {
+        roomHostId = data.id;
+        if (currentPlayer) {
+          isHost = Boolean(currentPlayer.id === roomHostId);
+          if (isHost) {
+            $('#popquiz-arena').addClass('host-view');
+          } else {
+            $('#popquiz-arena').removeClass('host-view');
+          }
+          renderTopControls();
+        }
       }
     });
 
@@ -924,6 +953,8 @@
     $('#activityControls').empty();
     if (socket) {
       socket.off('setColor');
+      socket.off('setName');
+      socket.off('playerLeft');
       socket.off('popquiz/sync');
       socket.off('popquiz/playersync');
       socket.off('popquiz/numberSelected');

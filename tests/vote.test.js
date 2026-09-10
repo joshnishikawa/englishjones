@@ -376,5 +376,67 @@ describe('Vote Hosted Activity Socket Handlers', () => {
       message: expect.stringContaining('Only the host'),
     }));
   });
+
+  test('handlePlayerLeft removes player from active players while keeping votes and selections intact for rejoin', () => {
+    socketHost.trigger('vote/ready', {
+      roomname,
+      playerId: 'HostTeacher',
+      playerNumber: 1,
+      isHost: true,
+      values: ['Option 1', 'Option 2'],
+    });
+    socketGuest1.trigger('vote/ready', {
+      roomname,
+      playerId: 'Student1',
+      playerNumber: 2,
+      isHost: false,
+    });
+    socketGuest1.trigger('vote/selectNumber', {
+      roomname,
+      playerId: 'Student1',
+      number: 2,
+    });
+
+    const state = voteEvents.getOrCreateVoteState(roomname);
+    state.userVotes.set('Student1', { 0: 3, 1: 2 });
+    expect(state.players.has('Student1')).toBe(true);
+    expect(state.numberSelections.get('Student1')).toBe(2);
+
+    // Player leaves
+    voteEvents.handlePlayerLeft(roomname, 'Student1');
+    expect(state.players.has('Student1')).toBe(false);
+    expect(state.userVotes.get('Student1')).toEqual({ 0: 3, 1: 2 });
+    expect(state.numberSelections.get('Student1')).toBe(2);
+
+    // Player rejoins
+    socketGuest1.trigger('vote/ready', {
+      roomname,
+      playerId: 'Student1',
+      playerNumber: 2,
+      isHost: false,
+    });
+    expect(state.players.has('Student1')).toBe(true);
+    expect(state.userVotes.get('Student1')).toEqual({ 0: 3, 1: 2 });
+    expect(state.numberSelections.get('Student1')).toBe(2);
+  });
+
+  test('updateHostId updates hostId and host player map entry when host changes name in vote', () => {
+    socketHost.trigger('vote/ready', {
+      roomname,
+      playerId: 'OldHost',
+      playerNumber: 1,
+      isHost: true,
+      values: ['Option 1', 'Option 2'],
+    });
+
+    const state = voteEvents.getOrCreateVoteState(roomname);
+    expect(state.hostId).toBe('OldHost');
+    expect(state.players.has('OldHost')).toBe(true);
+
+    voteEvents.updateHostId(roomname, 'OldHost', 'NewHost');
+    expect(state.hostId).toBe('NewHost');
+    expect(state.players.has('OldHost')).toBe(false);
+    expect(state.players.has('NewHost')).toBe(true);
+  });
 });
 

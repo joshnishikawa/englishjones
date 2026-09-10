@@ -388,8 +388,44 @@ const popquizEvents = (io, socket, touchRoom) => {
   });
 };
 
+function handlePlayerLeft(roomname, playerId, newHostId) {
+  const state = popquizStates.get(roomname);
+  if (!state) return;
+  state.players.delete(playerId);
+  if (newHostId) {
+    state.hostId = newHostId;
+  }
+  // Keep state.scores, state.numberSelections, state.selections intact for rejoin!
+}
+
+function updateHostId(roomname, oldHostId, newHostId) {
+  const state = popquizStates.get(roomname);
+  if (!state) return;
+  if (state.hostId === oldHostId) {
+    state.hostId = newHostId;
+  }
+  if (state.players.has(oldHostId)) {
+    const hostPlayer = state.players.get(oldHostId);
+    state.players.delete(oldHostId);
+    hostPlayer.id = newHostId;
+    state.players.set(newHostId, hostPlayer);
+  }
+  if (state.scores[oldHostId] !== undefined) {
+    state.scores[newHostId] = state.scores[oldHostId];
+    delete state.scores[oldHostId];
+  }
+  if (state.numberSelections.has(oldHostId)) {
+    const num = state.numberSelections.get(oldHostId);
+    state.numberSelections.delete(oldHostId);
+    state.numberSelections.set(newHostId, num);
+  }
+}
+
 popquizEvents.getOrCreatePopquizState = getOrCreatePopquizState;
 popquizEvents.clearPopquizState = clearPopquizState;
 popquizEvents.getTotalCount = getTotalCount;
+popquizEvents.handlePlayerLeft = handlePlayerLeft;
+popquizEvents.updateHostId = updateHostId;
 
 module.exports = popquizEvents;
+

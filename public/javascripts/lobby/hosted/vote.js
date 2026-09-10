@@ -139,8 +139,12 @@
         playerTokensMap[p.id] = $token;
         $pawnLayer.append($token);
       }
-      if (playerPositionsMap[p.id] === undefined) {
-        playerPositionsMap[p.id] = null;
+      if (playerPositionsMap[p.id] === undefined || playerPositionsMap[p.id] === null) {
+        if (currentStage === 'numbers' && numberSelectionsMap[p.id]) {
+          playerPositionsMap[p.id] = `vote-num-${numberSelectionsMap[p.id]}`;
+        } else {
+          playerPositionsMap[p.id] = null;
+        }
       }
     });
 
@@ -873,6 +877,28 @@
       }
     });
 
+    currentSocket.on('playerLeft', function(data) {
+      const remaining = Array.isArray(data) ? data : (data && data.players ? data.players : []);
+      playersList = remaining;
+      syncPawnsForPlayers(playersList);
+    });
+
+    currentSocket.on('setName', function(data) {
+      if (!data || !data.id) return;
+      if (data.number === 1 || (currentRoom && currentRoom.hostId === data.id)) {
+        roomHostId = data.id;
+        if (currentPlayer) {
+          isHost = Boolean(currentPlayer.id === roomHostId);
+          if (isHost) {
+            $('#vote-arena').addClass('host-view');
+          } else {
+            $('#vote-arena').removeClass('host-view');
+          }
+          renderTopControls();
+        }
+      }
+    });
+
     currentSocket.on('vote/sync', function(data) {
       if (!data) return;
       totalItemsCount = data.totalCount || (data.values ? data.values.length : 0);
@@ -1054,6 +1080,8 @@
     }
     if (socket) {
       socket.off('setColor');
+      socket.off('setName');
+      socket.off('playerLeft');
       socket.off('vote/sync');
       socket.off('vote/numberSelected');
       socket.off('vote/stageChanged');

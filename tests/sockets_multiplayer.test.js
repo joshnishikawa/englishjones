@@ -1701,6 +1701,178 @@ describe('Multiplayer Sockets Integration', () => {
       });
     });
   });
+
+  test('guest cannot change name while in a room, but host can change name and activity retains host controls', (done) => {
+    clientSocket1.emit('join', {
+      id: 'HostRenameTest',
+      roomtype: 'private',
+      color: '#ff0000',
+    });
+
+    clientSocket1.once('joined', ({ room }) => {
+      const roomname = room.roomname;
+      clientSocket2 = Client(`http://localhost:${serverPort}`);
+      clientSocket2.once('connect', () => {
+        clientSocket2.emit('join', {
+          id: 'GuestRenameTest',
+          roomtype: 'private',
+          roomname: roomname,
+          color: '#00ff00',
+        });
+      });
+
+      clientSocket2.once('joined', () => {
+        // Guest attempts to change name via getName
+        clientSocket2.emit('getName', {
+          id: 'GuestRenameTest',
+          roomname: roomname,
+        });
+
+        clientSocket2.once('error', (err) => {
+          expect(err.message).toBe('Only the host can change their name.');
+
+          // Host starts Pop Quiz
+          clientSocket1.emit('startActivity', {
+            roomname,
+            id: 'HostRenameTest',
+            activity: 'popquiz',
+            questions: [['A', 'B'], ['C', 'D']],
+          });
+
+          clientSocket1.emit('popquiz/ready', {
+            roomname,
+            playerId: 'HostRenameTest',
+            playerNumber: 1,
+            isHost: true,
+            questions: [['A', 'B'], ['C', 'D']],
+          });
+
+          clientSocket2.emit('popquiz/ready', {
+            roomname,
+            playerId: 'GuestRenameTest',
+            playerNumber: 2,
+            isHost: false,
+          });
+
+          // Host changes their name
+          clientSocket1.emit('getName', {
+            id: 'HostRenameTest',
+            roomname: roomname,
+          });
+
+          clientSocket1.once('setName', (nameData) => {
+            const newHostName = nameData.id;
+            expect(newHostName).toBeDefined();
+            expect(newHostName).not.toBe('HostRenameTest');
+
+            // Newly renamed host can advance activity (popquiz/setNumbers) without being rejected
+            clientSocket1.emit('popquiz/setNumbers', {
+              roomname,
+              id: newHostName,
+            });
+
+            clientSocket1.once('popquiz/roundstart', (roundData) => {
+              expect(roundData.questionIndex).toBe(0);
+              done();
+            });
+          });
+        });
+      });
+    });
+  });
+
+  test('player leaving room emits playerLeft and rejoin preserves activity selections and score', (done) => {
+    clientSocket1.emit('join', {
+      id: 'HostLeaveRejoin',
+      roomtype: 'private',
+      color: '#ff0000',
+    });
+
+    clientSocket1.once('joined', ({ room }) => {
+      const roomname = room.roomname;
+      clientSocket2 = Client(`http://localhost:${serverPort}`);
+      clientSocket2.once('connect', () => {
+        clientSocket2.emit('join', {
+          id: 'GuestLeaveRejoin',
+          roomtype: 'private',
+          roomname: roomname,
+          color: '#00ff00',
+        });
+      });
+
+      clientSocket2.once('joined', () => {
+        clientSocket1.emit('startActivity', {
+          roomname,
+          id: 'HostLeaveRejoin',
+          activity: 'popquiz',
+          questions: [['X', 'Y'], ['W', 'Z']],
+        });
+
+        clientSocket1.emit('popquiz/ready', {
+          roomname,
+          playerId: 'HostLeaveRejoin',
+          playerNumber: 1,
+          isHost: true,
+          questions: [['X', 'Y'], ['W', 'Z']],
+        });
+
+        clientSocket2.emit('popquiz/ready', {
+          roomname,
+          playerId: 'GuestLeaveRejoin',
+          playerNumber: 2,
+          isHost: false,
+        });
+
+        // Guest selects number 2
+        clientSocket2.emit('popquiz/selectNumber', {
+          roomname,
+          playerId: 'GuestLeaveRejoin',
+          number: 2,
+        });
+
+        clientSocket1.once('popquiz/numberSelected', (numData) => {
+          expect(numData.playerId).toBe('GuestLeaveRejoin');
+          expect(numData.number).toBe(2);
+
+          // Guest leaves the room
+          clientSocket2.emit('leave', {
+            roomname,
+            id: 'GuestLeaveRejoin',
+            roomtype: 'private',
+          });
+
+          // Host receives playerLeft
+          clientSocket1.once('playerLeft', (remainingPlayers) => {
+            expect(remainingPlayers.some((p) => p.id === 'GuestLeaveRejoin')).toBe(false);
+
+            // Guest reconnects / rejoins
+            clientSocket2.emit('join', {
+              id: 'GuestLeaveRejoin',
+              roomtype: 'private',
+              roomname: roomname,
+              number: 2,
+              color: '#00ff00',
+            });
+
+            clientSocket2.once('joined', () => {
+              clientSocket2.emit('popquiz/ready', {
+                roomname,
+                playerId: 'GuestLeaveRejoin',
+                playerNumber: 2,
+                isHost: false,
+              });
+
+              // popquiz/sync should reflect the preserved number selection for GuestLeaveRejoin
+              clientSocket2.once('popquiz/sync', (syncData) => {
+                expect(syncData.numberSelections['GuestLeaveRejoin']).toBe(2);
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+  });
 });
 
 
