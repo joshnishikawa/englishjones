@@ -4,6 +4,29 @@ const vocabulary = require('../public/vocabulary.js');
 const db = require('../config/db.js');
 const { NH_colors, getNHVocab } = require('../config/nh_helpers.js');
 const text_decks = require('../public/javascripts/text_decks.json');
+const multiplayer = require('./multiplayer');
+
+router.use('/lobby', multiplayer);
+
+router.get('/multiplayer', (req, res)=>{
+  try{
+    res.redirect('/teachers/lobby');
+  }
+  catch(err){
+    res.status(500).render('error', { message: err.message || String(err), error: err });
+    console.error(err);
+  }
+});
+
+router.get('/multiplayer/:activity', (req, res)=>{
+  try{
+    res.redirect(`/teachers/lobby/${encodeURIComponent(req.params.activity)}`);
+  }
+  catch(err){
+    res.status(500).render('error', { message: err.message || String(err), error: err });
+    console.error(err);
+  }
+});
 
 
 router.get('/', (req, res)=>{

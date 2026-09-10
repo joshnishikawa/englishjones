@@ -75,6 +75,28 @@ describe('Teachers Router', () => {
     }), expect.any(Function));
   });
 
+  test('GET /teachers/lobby should render lobby/lobby with isTeacher true', async () => {
+    const response = await request(app).get('/teachers/lobby');
+    expect(response.status).toBe(200);
+    expect(app.render).toHaveBeenCalledWith('lobby/lobby', expect.objectContaining({
+      isTeacher: true,
+      teacher: true,
+      activities: expect.any(Array),
+    }), expect.any(Function));
+  });
+
+  test('GET /teachers/multiplayer should redirect to /teachers/lobby', async () => {
+    const response = await request(app).get('/teachers/multiplayer');
+    expect(response.status).toBe(302);
+    expect(response.headers.location).toBe('/teachers/lobby');
+  });
+
+  test('GET /teachers/multiplayer/race should redirect to /teachers/lobby/race', async () => {
+    const response = await request(app).get('/teachers/multiplayer/race');
+    expect(response.status).toBe(302);
+    expect(response.headers.location).toBe('/teachers/lobby/race');
+  });
+
   test('should handle errors with 500 status and error view', async () => {
     renderError = true;
     const response = await request(app).get('/teachers/images');

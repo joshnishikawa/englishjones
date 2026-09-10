@@ -39,6 +39,11 @@ body {
   padding: 0.5rem 0;
 }
 
+.nav-item{
+  border: #ccc 1px solid;
+  border-radius: 0 10px 10px 0;
+}
+
 .nav.flex-column{
   box-shadow: inset -9px 0px 9px -9px rgba(0,0,0,0.3);
 }

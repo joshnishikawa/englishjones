@@ -6,7 +6,12 @@ const enabledActivities = activities.filter((activity) => activity.enabled);
 
 router.get('/', (req, res) => {
   try {
-    res.render('lobby/lobby', { activities: enabledActivities });
+    const isTeacher = Boolean(
+      (req.baseUrl && req.baseUrl.startsWith('/teachers')) ||
+      (req.originalUrl && req.originalUrl.startsWith('/teachers')) ||
+      (req.query && (req.query.teacher === '1' || req.query.teacher === 'true'))
+    );
+    res.render('lobby/lobby', { activities: enabledActivities, isTeacher, teacher: isTeacher });
   } catch (err) {
     res.status(500).render('error', { message: err.message || String(err), error: err });
     console.error(err);

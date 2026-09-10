@@ -71,7 +71,11 @@
 
 <div id="menu-container" class="d-flex">
   <div id="studentSideMenu">
-    <%- include('../students/navbar') -%>
+    <% if (typeof isTeacher !== 'undefined' && isTeacher) { %>
+      <%- include('../teachers/navbar') -%>
+    <% } else { %>
+      <%- include('../students/navbar') -%>
+    <% } %>
   </div>
 
   <div class="container-fluid">
@@ -250,5 +254,10 @@
   <script src="/javascripts/lobby/<%= activity.group === 'host' ? 'hosted' : 'multiplayer' %>/<%= activity.id %>.js"></script>
 <% }); %>
 <script src="/javascripts/lobby/lobby.js"></script>
+<script>
+  $(document).ready(function() {
+    $('#lobby-tab').addClass('active');
+  });
+</script>
 
 <%- include('../foot') -%>
