@@ -200,7 +200,7 @@
             <% activities.filter(a => a.group === 'host').forEach(function(activity){ %>
               <div class="rounded-3 border border-primary mb-2 host-activity-row" id="row-<%= activity.id %>">
 
-                <div class="btn activity d-flex justify-content-between align-items-center flex-grow-1" 
+                <div class="btn activity d-flex justify-content-between align-items-center flex-grow-1 pe-2" 
                         id="<%= activity.id %>" data-group="host" title="<%= activity.label %> activity" aria-label="<%= activity.label %> activity">
                   <span class="activity-label">
                     <%= activity.label %>
