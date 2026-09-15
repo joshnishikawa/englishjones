@@ -1,8 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const activities = require('../../config/multiplayer_activities.js');
+const hostedRouter = express.Router();
+const activities = require('../config/multiplayer_activities.js');
 
 const enabledActivities = activities.filter((activity) => activity.enabled);
+const enabledHostedActivities = activities.filter((activity) => activity.enabled && activity.group === 'host');
 
 router.get('/', (req, res) => {
   try {
@@ -31,5 +33,21 @@ router.get('/:activity', (req, res, next) => {
     console.error(err);
   }
 });
+
+hostedRouter.get('/:activity', (req, res, next) => {
+  const activity = enabledHostedActivities.find((a) => a.id === req.params.activity);
+  if (!activity) {
+    return next();
+  }
+  try {
+    res.render(`lobby/hosted/${activity.id}/index`);
+  } catch (err) {
+    res.status(500).render('error', { message: err.message || String(err), error: err });
+    console.error(err);
+  }
+});
+
+router.hostedRouter = hostedRouter;
+router.router = router;
 
 module.exports = router;

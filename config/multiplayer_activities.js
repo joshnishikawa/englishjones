@@ -19,19 +19,19 @@ module.exports = [
   },
   {
     id: 'popquiz',
-    label: 'Pop Quiz',
+    label: '👑Pop Quiz',
     group: 'host',
     enabled: true,
   },
   {
     id: 'raffle',
-    label: 'Raffle',
+    label: '🎟️Raffle',
     group: 'host',
     enabled: true,
   },
   {
     id: 'vote',
-    label: 'Vote',
+    label: '⭐Vote',
     group: 'host',
     enabled: true,
   },

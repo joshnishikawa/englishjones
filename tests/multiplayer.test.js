@@ -1,6 +1,6 @@
 const express = require('express');
 const request = require('supertest');
-const router = require('../routes/multiplayer/index');
+const router = require('../routes/lobby');
 
 describe('Multiplayer Router', () => {
   let app;
@@ -111,7 +111,7 @@ describe('Hosted Activities Router', () => {
   let app;
   let renderError = false;
   let consoleErrorSpy;
-  const hostedRouter = require('../routes/hosted/index');
+  const { hostedRouter } = require('../routes/lobby');
 
   beforeEach(() => {
     renderError = false;

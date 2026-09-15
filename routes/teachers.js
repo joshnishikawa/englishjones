@@ -4,9 +4,9 @@ const vocabulary = require('../public/vocabulary.js');
 const db = require('../config/db.js');
 const { NH_colors, getNHVocab } = require('../config/nh_helpers.js');
 const text_decks = require('../public/javascripts/text_decks.json');
-const multiplayer = require('./multiplayer');
+const lobby = require('./lobby.js');
 
-router.use('/lobby', multiplayer);
+router.use('/lobby', lobby);
 
 router.get('/multiplayer', (req, res)=>{
   try{
