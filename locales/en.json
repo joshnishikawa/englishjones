@@ -339,5 +339,7 @@
 		"ex2": "Yûki &rarr; Yuki<br />Tōya &rarr; Toya",
 		"p4": "Students may enjoy decorating their own name tags but this usually detracts from readability. Since name tags are primarily to help teachers learn and use students' names, readability is the most important thing. Please keep nametags simple."
 	},
-	"lobby": "lobby"
+	"lobby": "lobby",
+	"clubs": "clubs",
+	"clubs+": "clubs+"
 }

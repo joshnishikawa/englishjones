@@ -39,6 +39,11 @@ body {
   padding: 0.5rem 0;
 }
 
+.vertical-label .nav-link {
+  padding-left: 0.25rem;   /* or 0.35rem */
+  padding-right: 0.25rem;
+}
+
 .nav-item{
   border: #ccc 1px solid;
   border-radius: 0 10px 10px 0;
