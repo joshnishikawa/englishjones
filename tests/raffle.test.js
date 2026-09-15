@@ -377,5 +377,57 @@ describe('Raffle Hosted Activity Socket Handlers', () => {
     expect(state.players.has('OldHost')).toBe(false);
     expect(state.players.has('NewHost')).toBe(true);
   });
+
+  test('rejoining or readying in revealed stage includes results and values in raffle/sync', () => {
+    socketHost.trigger('raffle/ready', {
+      roomname,
+      playerId: 'HostTeacher',
+      playerNumber: 1,
+      isHost: true,
+      values: ['Prize 1', 'Prize 2'],
+    });
+
+    socketGuest1.trigger('raffle/ready', {
+      roomname,
+      playerId: 'Student1',
+      playerNumber: 2,
+      isHost: false,
+    });
+
+    socketHost.trigger('raffle/setNumbers', {
+      roomname,
+      id: 'HostTeacher',
+    });
+
+    socketGuest1.trigger('raffle/selectEmoji', {
+      roomname,
+      playerId: 'Student1',
+      emojiIndex: 0,
+    });
+
+    socketHost.trigger('raffle/reveal', {
+      roomname,
+      id: 'HostTeacher',
+    });
+
+    // Another student joins or someone refreshes while in revealed stage
+    socketGuest2.trigger('raffle/ready', {
+      roomname,
+      playerId: 'Student2',
+      playerNumber: 3,
+      isHost: false,
+    });
+
+    expect(ioMock.emit).toHaveBeenLastCalledWith('raffle/sync', expect.objectContaining({
+      stage: 'revealed',
+      values: expect.any(Array),
+      results: expect.arrayContaining([
+        expect.objectContaining({
+          playerId: 'Student1',
+          selectedEmojiIndex: 0,
+        }),
+      ]),
+    }));
+  });
 });
 

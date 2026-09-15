@@ -163,7 +163,7 @@
         <div id="activityHeader" class="d-flex justify-content-between align-items-center">
           <!-- Left: Host Badge & Room Name -->
           <div class="d-flex align-items-center">
-            <div id="activityExit" class="d-none me-2" title="Leave activity" aria-label="Leave activity">
+            <div id="activityExit" class="d-none me-2 point" title="Leave activity" aria-label="Leave activity">
               <img src="/image/exit.svg" class="h-100 w-100"></i>
             </div>
             <span id="activityRoomName" class="fs-2 fw-bold text-success"></span>&nbsp;
@@ -198,36 +198,45 @@
           <div id="hostActivities" class="d-none">
             <div id="hostActivitiesHeader" class="small text-muted fw-bold mb-2">Host Activities</div>
             <% activities.filter(a => a.group === 'host').forEach(function(activity){ %>
-              <div class="d-flex align-items-center gap-2 mb-2 host-activity-row" id="row-<%= activity.id %>">
-                <button class="btn btn-outline-primary activity d-flex justify-content-between align-items-center flex-grow-1" id="<%= activity.id %>" data-group="host" title="<%= activity.label %> activity" aria-label="<%= activity.label %> activity">
-                  <span class="activity-left d-flex align-items-center gap-2">
-                    <span class="host-pawn"></span>
-                    <span class="activity-label">
-                      <%= activity.label %>
-                    </span>
+              <div class="rounded-3 border border-primary mb-2 host-activity-row" id="row-<%= activity.id %>">
+
+                <div class="btn activity d-flex justify-content-between align-items-center flex-grow-1" 
+                        id="<%= activity.id %>" data-group="host" title="<%= activity.label %> activity" aria-label="<%= activity.label %> activity">
+                  <span class="activity-label">
+                    <%= activity.label %>
                   </span>
                   <span class="activity-pawns d-flex align-items-center"></span>
-                  <span class="activity-count badge bg-secondary ms-1">0</span>
-                </button>
-                <button class="btn btn-success start-activity-btn d-none" data-activity="<%= activity.id %>" title="Start <%= activity.label %>" aria-label="Start <%= activity.label %>">
-                  Start
-                </button>
+                  <div>
+                    <span class="activity-count badge bg-secondary ms-1">0</span>
+                    <button class="btn btn-sm btn-success start-activity-btn d-none" data-activity="<%= activity.id %>" 
+                          title="Start <%= activity.label %>" aria-label="Start <%= activity.label %>">
+                      Start
+                    </button>
+                  </div>
+                </div>
+
+
+                <% if (activity.id === 'popquiz') { %>
+                  <div id="popquiz-config" class="d-none">
+                    <textarea id="popquiz-questions" class="form-control form-control-sm font-monospace rounded-3" rows="4" 
+                              placeholder="Put answers to multiple-choice questions here separated by commas.&#10;apples, bananas, pears&#10;red, yellow, green, blue&#10;..."></textarea>
+                  </div>
+                <% } %>
+                <% if (activity.id === 'raffle') { %>
+                  <div id="raffle-config" class="d-none">
+                    <textarea id="raffle-values" class="form-control form-control-sm font-monospace rounded-3" rows="3" 
+                              placeholder="Enter comma-separated values.&#10;a New Car, Steak Knives, Detergent, a Trip to Cancun ..."></textarea>
+                  </div>
+                <% } %>
+                <% if (activity.id === 'vote') { %>
+                  <div id="vote-config" class="d-none">
+                    <textarea id="vote-values" class="form-control form-control-sm font-monospace rounded-3" rows="3" 
+                              placeholder="Enter comma-separated options to vote on.&#10;Elephants, Donkeys, Panthers ..."></textarea>
+                  </div>
+                <% } %>
+
+
               </div>
-              <% if (activity.id === 'popquiz') { %>
-                <div id="popquiz-config" class="d-none mb-3">
-                  <textarea id="popquiz-questions" class="form-control form-control-sm font-monospace" rows="4" placeholder="Put answers to multiple-choice questions here separated by commas&#10;apples, bananas, pears&#10;red, yellow, green, blue&#10;..."></textarea>
-                </div>
-              <% } %>
-              <% if (activity.id === 'raffle') { %>
-                <div id="raffle-config" class="d-none mb-3">
-                  <textarea id="raffle-values" class="form-control form-control-sm font-monospace" rows="3" placeholder="Enter comma-separated values (e.g. Prize 1, Prize 2, Prize 3, Bonus Points, Free Pass, Sticker, Surprise, High Five)"></textarea>
-                </div>
-              <% } %>
-              <% if (activity.id === 'vote') { %>
-                <div id="vote-config" class="d-none mb-3">
-                  <textarea id="vote-values" class="form-control form-control-sm font-monospace" rows="3" placeholder="Enter comma-separated options to vote on (e.g. Option A, Option B, Option C, Option D, Option E)"></textarea>
-                </div>
-              <% } %>
             <% }); %>
           </div>
         </div>

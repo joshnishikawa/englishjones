@@ -303,8 +303,16 @@
     });
   }
 
-  function renderRevealedCards(shuffledValues, emojis) {
+  function renderRevealedCards(shuffledValues, emojis, animate) {
+    if (!Array.isArray(emojis) || !Array.isArray(shuffledValues)) return;
     const $container = $('#raffle-reveal-container');
+    const existingCards = $container.find('.raffle-flip-card');
+
+    if (!animate && existingCards.length === emojis.length && emojis.length > 0) {
+      existingCards.addClass('is-flipped');
+      return;
+    }
+
     $container.empty();
 
     emojis.forEach((emoji, idx) => {
@@ -313,11 +321,14 @@
 
       const $col = $('<div>', { class: 'col' });
       const $flipCard = $('<div>', {
-        class: 'raffle-flip-card w-100',
+        class: `raffle-flip-card w-100 ${!animate ? 'is-flipped' : ''}`,
         id: `raffle-flip-${idx}`,
       });
 
-      const $inner = $('<div>', { class: 'raffle-flip-inner' });
+      const $inner = $('<div>', {
+        class: 'raffle-flip-inner',
+        style: !animate ? 'transition: none;' : '',
+      });
 
       // Front face: Emoji
       const $front = $('<div>', {
@@ -337,14 +348,20 @@
       $container.append($col);
     });
 
-    // 3D flip card cascade animation
-    setTimeout(() => {
-      $('.raffle-flip-card').each(function(i) {
-        setTimeout(() => {
-          $(this).addClass('is-flipped');
-        }, i * 100);
-      });
-    }, 300);
+    if (animate) {
+      // 3D flip card cascade animation
+      setTimeout(() => {
+        $('.raffle-flip-card').each(function(i) {
+          setTimeout(() => {
+            $(this).addClass('is-flipped');
+          }, i * 100);
+        });
+      }, 300);
+    } else {
+      setTimeout(() => {
+        $('.raffle-flip-inner').css('transition', '');
+      }, 100);
+    }
   }
 
   function populatePrintTable(results) {
@@ -583,12 +600,15 @@
         }
       } else if (data.stage === 'revealed' && data.values) {
         roomValues = data.values;
-        renderRevealedCards(data.values, roomEmojis);
+        renderRevealedCards(data.values, roomEmojis, false);
         if (data.claimedEmojis) {
           Object.keys(data.claimedEmojis).forEach((idx) => {
             const pId = data.claimedEmojis[idx];
             playerPositionsMap[pId] = `raffle-flip-${idx}`;
           });
+        }
+        if (data.results) {
+          populatePrintTable(data.results);
         }
       }
 
@@ -647,9 +667,10 @@
     currentSocket.on('raffle/revealed', function(data) {
       if (!data) return;
       roomValues = data.shuffledValues;
+      if (data.emojis) roomEmojis = data.emojis;
       claimedEmojiMap = data.claimedEmojis || claimedEmojiMap;
 
-      renderRevealedCards(data.shuffledValues, data.emojis || roomEmojis);
+      renderRevealedCards(data.shuffledValues, roomEmojis, true);
 
       // Move pawns to flip cards
       Object.keys(claimedEmojiMap).forEach((idx) => {

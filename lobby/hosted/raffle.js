@@ -122,6 +122,7 @@ function serializeRaffleState(state) {
     totalCount: totalCount,
     customTotalCount: state.customTotalCount || null,
     values: state.stage === 'revealed' ? state.shuffledValues : null,
+    results: state.stage === 'revealed' ? buildResultsTable(state) : null,
     emojis: state.emojis,
     hostId: state.hostId,
     players: Array.from(state.players.values()),
@@ -141,7 +142,7 @@ function buildResultsTable(state) {
     const emojiData = state.emojiSelections.get(p.id) || null;
     const emojiIndex = emojiData ? emojiData.emojiIndex : null;
     const emoji = emojiData ? emojiData.emoji : null;
-    const prize = (emojiIndex !== null && state.shuffledValues[emojiIndex] !== undefined)
+    const prize = (emojiIndex !== null && state.shuffledValues && state.shuffledValues[emojiIndex] !== undefined)
       ? state.shuffledValues[emojiIndex]
       : '—';
 
