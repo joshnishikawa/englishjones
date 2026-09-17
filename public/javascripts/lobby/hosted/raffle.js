@@ -475,6 +475,47 @@
     }, 50);
   }
 
+  function onSetColor(data) {
+    if (!data) return;
+    if (currentPlayer && (data.id === currentPlayer.id || data.number == currentPlayer.number)) {
+      currentPlayer.color = data.color;
+    }
+    if (Array.isArray(playersList)) {
+      const target = playersList.find(p => (data.id && p.id === data.id) || (data.number !== undefined && p.number == data.number));
+      if (target) {
+        target.color = data.color;
+      }
+    }
+    const pId = data.id || (playersList && playersList.find(p => p.number == data.number)?.id);
+    if (pId && playerTokensMap[pId]) {
+      const safeColor = sanitizeColor(data.color);
+      playerTokensMap[pId].find('.raffle-token-pawn').replaceWith($(getPawnSvg(safeColor)));
+      playerTokensMap[pId].find('.raffle-token-initials').css('color', safeColor);
+    }
+  }
+
+  function onPlayerLeft(data) {
+    const remaining = Array.isArray(data) ? data : (data && data.players ? data.players : []);
+    playersList = remaining;
+    syncPawnsForPlayers(playersList);
+  }
+
+  function onSetName(data) {
+    if (!data || !data.id) return;
+    if (data.number === 1 || (currentRoom && currentRoom.hostId === data.id)) {
+      roomHostId = data.id;
+      if (currentPlayer) {
+        isHost = Boolean(currentPlayer.id === roomHostId);
+        if (isHost) {
+          $('#raffle-arena').addClass('host-view');
+        } else {
+          $('#raffle-arena').removeClass('host-view');
+        }
+        renderTopControls();
+      }
+    }
+  }
+
   function mount(options) {
     currentSocket = options.socket;
     currentPlayer = options.player;
@@ -521,34 +562,9 @@
     });
 
     // Socket Event Handlers
-    currentSocket.on('setColor', function(data) {
-      if (!data) return;
-      if (currentPlayer && (data.number === currentPlayer.number || data.id === currentPlayer.id)) {
-        currentPlayer.color = data.color;
-      }
-    });
-
-    currentSocket.on('playerLeft', function(data) {
-      const remaining = Array.isArray(data) ? data : (data && data.players ? data.players : []);
-      playersList = remaining;
-      syncPawnsForPlayers(playersList);
-    });
-
-    currentSocket.on('setName', function(data) {
-      if (!data || !data.id) return;
-      if (data.number === 1 || (currentRoom && currentRoom.hostId === data.id)) {
-        roomHostId = data.id;
-        if (currentPlayer) {
-          isHost = Boolean(currentPlayer.id === roomHostId);
-          if (isHost) {
-            $('#raffle-arena').addClass('host-view');
-          } else {
-            $('#raffle-arena').removeClass('host-view');
-          }
-          renderTopControls();
-        }
-      }
-    });
+    currentSocket.on('setColor', onSetColor);
+    currentSocket.on('playerLeft', onPlayerLeft);
+    currentSocket.on('setName', onSetName);
 
     currentSocket.on('raffle/sync', function(data) {
       if (!data) return;
@@ -768,9 +784,9 @@
     $('#activityStatus').empty();
     $('#activityControls').empty();
     if (socket) {
-      socket.off('setColor');
-      socket.off('setName');
-      socket.off('playerLeft');
+      socket.off('setColor', onSetColor);
+      socket.off('setName', onSetName);
+      socket.off('playerLeft', onPlayerLeft);
       socket.off('raffle/sync');
       socket.off('raffle/numberSelected');
       socket.off('raffle/stageChanged');

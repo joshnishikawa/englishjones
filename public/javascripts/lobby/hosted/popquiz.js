@@ -177,6 +177,13 @@
       $('#popquiz-quiz-screen').removeClass('d-none');
       $('#popquiz-gameover-screen').addClass('d-none');
 
+      // Clear any Phase 1 number card targets so pawns reset to dock
+      Object.keys(playerPositionsMap).forEach((pId) => {
+        if (typeof playerPositionsMap[pId] === 'string' && playerPositionsMap[pId].startsWith('popquiz-num-')) {
+          playerPositionsMap[pId] = null;
+        }
+      });
+
       if (isHost) {
         $('#popquiz-arena').addClass('host-view');
         if ($('#popquiz-top-host-actions').length === 0) renderTopControls();
@@ -307,7 +314,12 @@
         targetElId = `choice-${target}`;
       }
 
-      if (!targetElId || !document.getElementById(targetElId)) {
+      const targetEl = targetElId ? document.getElementById(targetElId) : null;
+      const isHiddenScreen = targetEl && $(targetEl).closest('.popquiz-screen').hasClass('d-none');
+      const isInvalidTarget = (currentStage === 'quiz' && targetElId && targetElId.startsWith('popquiz-num-')) ||
+                              (currentStage === 'numbers' && targetElId && targetElId.startsWith('choice-'));
+
+      if (!targetElId || !targetEl || isHiddenScreen || isInvalidTarget) {
         dockPlayers.push(pId);
       } else {
         targetElementPlayers[targetElId] = targetElementPlayers[targetElId] || [];
@@ -361,6 +373,7 @@
       const cardEl = document.getElementById(elId);
       if (!cardEl) return;
       const cardRect = cardEl.getBoundingClientRect();
+      if (cardRect.width === 0 || cardRect.height === 0) return;
       const list = targetElementPlayers[elId];
       const M = list.length;
       if (M === 0) return;
@@ -504,6 +517,8 @@
           } else {
             playerPositionsMap[p.id] = null;
           }
+        } else if (currentStage !== 'numbers' && typeof playerPositionsMap[p.id] === 'string' && playerPositionsMap[p.id].startsWith('popquiz-num-')) {
+          playerPositionsMap[p.id] = null;
         }
       } else {
         const $score = playerTokensMap[p.id].find('.popquiz-token-score');
@@ -512,6 +527,8 @@
         }
         if (currentStage === 'numbers' && numberSelectionsMap[p.id] && (!playerPositionsMap[p.id] || playerPositionsMap[p.id] === null)) {
           playerPositionsMap[p.id] = `popquiz-num-${numberSelectionsMap[p.id]}`;
+        } else if (currentStage !== 'numbers' && typeof playerPositionsMap[p.id] === 'string' && playerPositionsMap[p.id].startsWith('popquiz-num-')) {
+          playerPositionsMap[p.id] = null;
         }
       }
     });
@@ -519,6 +536,47 @@
     setTimeout(() => {
       updatePawnPositions(Boolean(instant));
     }, 30);
+  }
+
+  function onSetColor(data) {
+    if (!data) return;
+    if (currentPlayer && (data.id === currentPlayer.id || data.number == currentPlayer.number)) {
+      currentPlayer.color = data.color;
+    }
+    if (Array.isArray(playersList)) {
+      const target = playersList.find(p => (data.id && p.id === data.id) || (data.number !== undefined && p.number == data.number));
+      if (target) {
+        target.color = data.color;
+      }
+    }
+    const pId = data.id || (playersList && playersList.find(p => p.number == data.number)?.id);
+    if (pId && playerTokensMap[pId]) {
+      const safeColor = sanitizeColor(data.color);
+      playerTokensMap[pId].find('.popquiz-token-pawn').replaceWith($(getPawnSvg(safeColor)));
+      playerTokensMap[pId].find('.popquiz-token-initials').css('color', safeColor);
+    }
+  }
+
+  function onPlayerLeft(data) {
+    const remaining = Array.isArray(data) ? data : (data && data.players ? data.players : []);
+    playersList = remaining;
+    syncPawnsForPlayers(playersList);
+  }
+
+  function onSetName(data) {
+    if (!data || !data.id) return;
+    if (data.number === 1 || (currentRoom && currentRoom.hostId === data.id)) {
+      roomHostId = data.id;
+      if (currentPlayer) {
+        isHost = Boolean(currentPlayer.id === roomHostId);
+        if (isHost) {
+          $('#popquiz-arena').addClass('host-view');
+        } else {
+          $('#popquiz-arena').removeClass('host-view');
+        }
+        renderTopControls();
+      }
+    }
   }
 
   function mount(options) {
@@ -558,34 +616,9 @@
     window.addEventListener('beforeprint', populatePrintReport);
 
     // Socket Event Handlers
-    currentSocket.on('setColor', function(data) {
-      if (!data) return;
-      if (currentPlayer && (data.number === currentPlayer.number || data.id === currentPlayer.id)) {
-        currentPlayer.color = data.color;
-      }
-    });
-
-    currentSocket.on('playerLeft', function(data) {
-      const remaining = Array.isArray(data) ? data : (data && data.players ? data.players : []);
-      playersList = remaining;
-      syncPawnsForPlayers(playersList);
-    });
-
-    currentSocket.on('setName', function(data) {
-      if (!data || !data.id) return;
-      if (data.number === 1 || (currentRoom && currentRoom.hostId === data.id)) {
-        roomHostId = data.id;
-        if (currentPlayer) {
-          isHost = Boolean(currentPlayer.id === roomHostId);
-          if (isHost) {
-            $('#popquiz-arena').addClass('host-view');
-          } else {
-            $('#popquiz-arena').removeClass('host-view');
-          }
-          renderTopControls();
-        }
-      }
-    });
+    currentSocket.on('setColor', onSetColor);
+    currentSocket.on('playerLeft', onPlayerLeft);
+    currentSocket.on('setName', onSetName);
 
     // Handle full state sync
     currentSocket.on('popquiz/sync', function(data) {
@@ -628,6 +661,11 @@
         totalQuestionsCount = data.totalQuestions || 1;
         isRoundGraded = Boolean(data.graded);
         if (data.choices) roundChoices = data.choices;
+        Object.keys(playerPositionsMap).forEach((pId) => {
+          if (typeof playerPositionsMap[pId] === 'string' && playerPositionsMap[pId].startsWith('popquiz-num-')) {
+            playerPositionsMap[pId] = null;
+          }
+        });
         if (isRoundGraded && data.correctChoiceIndex !== null && data.correctChoiceIndex !== undefined) {
           const correctIndex = Number(data.correctChoiceIndex);
           $('.popquiz-choice-card').each(function() {
@@ -641,8 +679,8 @@
         }
       }
 
-      syncPawnsForPlayers(playersList);
       setStage(data.stage || 'numbers');
+      syncPawnsForPlayers(playersList);
     });
 
     // Handle dynamic player sync
@@ -732,6 +770,9 @@
         $container.append($col);
       });
 
+      // Switch stage to quiz FIRST so pawns are detached from Phase 1 numbers
+      setStage('quiz');
+
       // Reset choice positions to dock for all players on new round start
       Object.keys(playerPositionsMap).forEach((k) => {
         playerPositionsMap[k] = null;
@@ -739,7 +780,6 @@
 
       const rawPlayers = data.players || (currentRoom ? currentRoom.players : [currentPlayer]);
       syncPawnsForPlayers(rawPlayers, true);
-      setStage('quiz');
     });
 
     // Handle player choice selection — smooth pawn glide
@@ -952,9 +992,9 @@
     $('#activityStatus').empty();
     $('#activityControls').empty();
     if (socket) {
-      socket.off('setColor');
-      socket.off('setName');
-      socket.off('playerLeft');
+      socket.off('setColor', onSetColor);
+      socket.off('setName', onSetName);
+      socket.off('playerLeft', onPlayerLeft);
       socket.off('popquiz/sync');
       socket.off('popquiz/playersync');
       socket.off('popquiz/numberSelected');

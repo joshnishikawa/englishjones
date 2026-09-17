@@ -1,0 +1,306 @@
+{
+  "boots": {
+    "file": "boots.png",
+    "bbox": [
+      280,
+      2672,
+      720,
+      2853
+    ],
+    "left": 28.0,
+    "top": 89.07,
+    "width": 44.0,
+    "height": 6.03,
+    "zIndex": 15,
+    "origW": 440,
+    "origH": 181
+  },
+  "cap": {
+    "file": "cap.png",
+    "bbox": [
+      144,
+      111,
+      855,
+      463
+    ],
+    "left": 14.4,
+    "top": 3.7,
+    "width": 71.1,
+    "height": 11.73,
+    "zIndex": 40,
+    "origW": 711,
+    "origH": 352
+  },
+  "cargo_shorts": {
+    "file": "cargo_shorts.png",
+    "bbox": [
+      207,
+      1524,
+      796,
+      2166
+    ],
+    "left": 20.7,
+    "top": 50.8,
+    "width": 58.9,
+    "height": 21.4,
+    "zIndex": 10,
+    "origW": 589,
+    "origH": 642
+  },
+  "coat": {
+    "file": "coat.png",
+    "bbox": [
+      68,
+      866,
+      931,
+      1673
+    ],
+    "left": 6.8,
+    "top": 28.87,
+    "width": 86.3,
+    "height": 26.9,
+    "zIndex": 30,
+    "origW": 863,
+    "origH": 807
+  },
+  "dog_T-shirt": {
+    "file": "dog_T-shirt.png",
+    "bbox": [
+      190,
+      834,
+      810,
+      1594
+    ],
+    "left": 19.0,
+    "top": 27.8,
+    "width": 62.0,
+    "height": 25.33,
+    "zIndex": 20,
+    "origW": 620,
+    "origH": 760
+  },
+  "dress_shirt": {
+    "file": "dress_shirt.png",
+    "bbox": [
+      105,
+      859,
+      894,
+      1724
+    ],
+    "left": 10.5,
+    "top": 28.63,
+    "width": 78.9,
+    "height": 28.83,
+    "zIndex": 20,
+    "origW": 789,
+    "origH": 865
+  },
+  "hat": {
+    "file": "hat.png",
+    "bbox": [
+      174,
+      123,
+      826,
+      464
+    ],
+    "left": 17.4,
+    "top": 4.1,
+    "width": 65.2,
+    "height": 11.37,
+    "zIndex": 40,
+    "origW": 652,
+    "origH": 341
+  },
+  "jeans": {
+    "file": "jeans.png",
+    "bbox": [
+      214,
+      1515,
+      786,
+      2705
+    ],
+    "left": 21.4,
+    "top": 50.5,
+    "width": 57.2,
+    "height": 39.67,
+    "zIndex": 10,
+    "origW": 572,
+    "origH": 1190
+  },
+  "knit_cap": {
+    "file": "knit_cap.png",
+    "bbox": [
+      221,
+      68,
+      777,
+      692
+    ],
+    "left": 22.1,
+    "top": 2.27,
+    "width": 55.6,
+    "height": 20.8,
+    "zIndex": 40,
+    "origW": 556,
+    "origH": 624
+  },
+  "long-sleeve_T-shirt": {
+    "file": "long-sleeve_T-shirt.png",
+    "bbox": [
+      76,
+      847,
+      916,
+      1647
+    ],
+    "left": 7.6,
+    "top": 28.23,
+    "width": 84.0,
+    "height": 26.67,
+    "zIndex": 20,
+    "origW": 840,
+    "origH": 800
+  },
+  "other_pants": {
+    "file": "other_pants.png",
+    "bbox": [
+      207,
+      1500,
+      784,
+      2748
+    ],
+    "left": 20.7,
+    "top": 50.0,
+    "width": 57.7,
+    "height": 41.6,
+    "zIndex": 10,
+    "origW": 577,
+    "origH": 1248
+  },
+  "pants": {
+    "file": "pants.png",
+    "bbox": [
+      215,
+      1529,
+      783,
+      2750
+    ],
+    "left": 21.5,
+    "top": 50.97,
+    "width": 56.8,
+    "height": 40.7,
+    "zIndex": 10,
+    "origW": 568,
+    "origH": 1221
+  },
+  "pjs": {
+    "file": "pjs.png",
+    "bbox": [
+      174,
+      839,
+      841,
+      2735
+    ],
+    "left": 17.4,
+    "top": 27.97,
+    "width": 66.7,
+    "height": 63.2,
+    "zIndex": 20,
+    "origW": 667,
+    "origH": 1896
+  },
+  "shirt": {
+    "file": "shirt.png",
+    "bbox": [
+      96,
+      865,
+      905,
+      1593
+    ],
+    "left": 9.6,
+    "top": 28.83,
+    "width": 80.9,
+    "height": 24.27,
+    "zIndex": 20,
+    "origW": 809,
+    "origH": 728
+  },
+  "shorts": {
+    "file": "shorts.png",
+    "bbox": [
+      215,
+      1524,
+      785,
+      2048
+    ],
+    "left": 21.5,
+    "top": 50.8,
+    "width": 57.0,
+    "height": 17.47,
+    "zIndex": 10,
+    "origW": 570,
+    "origH": 524
+  },
+  "sneakers": {
+    "file": "sneakers.png",
+    "bbox": [
+      282,
+      2700,
+      650,
+      2853
+    ],
+    "left": 28.2,
+    "top": 90.0,
+    "width": 36.8,
+    "height": 5.1,
+    "zIndex": 15,
+    "origW": 368,
+    "origH": 153
+  },
+  "snow_boots": {
+    "file": "snow_boots.png",
+    "bbox": [
+      298,
+      2645,
+      703,
+      2853
+    ],
+    "left": 29.8,
+    "top": 88.17,
+    "width": 40.5,
+    "height": 6.93,
+    "zIndex": 15,
+    "origW": 405,
+    "origH": 208
+  },
+  "sunglasses": {
+    "file": "sunglasses.png",
+    "bbox": [
+      150,
+      495,
+      856,
+      635
+    ],
+    "left": 15.0,
+    "top": 16.5,
+    "width": 70.6,
+    "height": 4.67,
+    "zIndex": 50,
+    "origW": 706,
+    "origH": 140
+  },
+  "sweater": {
+    "file": "sweater.png",
+    "bbox": [
+      176,
+      864,
+      825,
+      1675
+    ],
+    "left": 17.6,
+    "top": 28.8,
+    "width": 64.9,
+    "height": 27.03,
+    "zIndex": 25,
+    "origW": 649,
+    "origH": 811
+  }
+}

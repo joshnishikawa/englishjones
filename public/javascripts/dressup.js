@@ -23,26 +23,99 @@ function initializeDressup(config) {
   const clothingSelector = config.clothingSelector;
   const characterSelector = config.characterSelector;
   const clothingClass = config.clothingClass;
+  const resetSelector = config.resetSelector || '#reset-btn';
+
+  // Semantic Z-index map for natural garment layering
+  function getClothingZIndex(clothingType) {
+    const zIndexMap = {
+      // Accessories (face level)
+      'sunglasses': 50,
+      // Hats & Headwear
+      'cap': 40,
+      'hat': 40,
+      'knit_cap': 40,
+      // Outerwear
+      'coat': 30,
+      'vest': 28,
+      // Tops
+      'sweater': 25,
+      'shirt': 20,
+      'dress_shirt': 20,
+      'dog_T-shirt': 20,
+      'long-sleeve_T-shirt': 20,
+      'ong-sleeve_T-shirt': 20,
+      'T-shirt': 20,
+      'blouse': 20,
+      'dress': 20,
+      'pjs': 20,
+      // Shoes & Footwear
+      'boots': 15,
+      'snow_boots': 15,
+      'hiking_boots': 15,
+      'sneakers': 15,
+      'shoes': 15,
+      // Bottoms
+      'pants': 10,
+      'jeans': 10,
+      'shorts': 10,
+      'cargo_shorts': 10,
+      'cargo_skirt': 10,
+      'skirt': 10,
+      'other_pants': 10
+    };
+    return zIndexMap[clothingType] || 10;
+  }
   
   // CLOTHING FUNCTIONALITY
-  $(clothingSelector).on('click', function() {
-    let $clickedImg = $(this);
+  $(clothingSelector).on('click', function(e) {
+    let $clicked = $(this);
+    let $clickedImg = $clicked.is('img') ? $clicked : $clicked.find('img');
+    if (!$clickedImg.length) return;
+
     let clothingType = $clickedImg.attr('alt');
     
     // Check if this clothing item is already on the character
     if (clothingOnCharacter[clothingType]) {
       return; // Don't add duplicates
     }
-    
+
     let $character = $(characterSelector);
     let $characterContainer = $character.parent();
     
-    // Get positions for animation (BEFORE hiding the element)
     let clickedOffset = $clickedImg.offset();
-    let characterOffset = $character.offset();
-    
-    // Store the original position before hiding
+    let originalWidth = $clickedImg.width();
+    let originalHeight = $clickedImg.height();
     let originalOffset = clickedOffset;
+
+    // Check if coordinate attributes are present
+    let hasCoords = $clickedImg.attr('data-left') !== undefined;
+    let coord = {
+      left: parseFloat($clickedImg.attr('data-left')),
+      top: parseFloat($clickedImg.attr('data-top')),
+      width: parseFloat($clickedImg.attr('data-width')),
+      height: parseFloat($clickedImg.attr('data-height')),
+      zIndex: parseInt($clickedImg.attr('data-zindex')) || getClothingZIndex(clothingType)
+    };
+
+    let targetScreenLeft, targetScreenTop, targetWidthPx, targetHeightPx;
+
+    if (hasCoords && !isNaN(coord.left)) {
+      let charOffset = $characterContainer.offset();
+      let charWidth = $characterContainer.width();
+      let charHeight = $characterContainer.height();
+
+      targetWidthPx = (coord.width / 100) * charWidth;
+      targetHeightPx = (coord.height / 100) * charHeight;
+      targetScreenLeft = charOffset.left + (coord.left / 100) * charWidth;
+      targetScreenTop = charOffset.top + (coord.top / 100) * charHeight;
+    } else {
+      // Legacy full-body overlay mode (e.g. girl)
+      let characterOffset = $character.offset();
+      targetScreenLeft = characterOffset.left;
+      targetScreenTop = characterOffset.top;
+      targetWidthPx = $character.width();
+      targetHeightPx = $character.height();
+    }
     
     // Create a clone to move to the character
     let $clonedImg = $clickedImg.clone();
@@ -54,19 +127,23 @@ function initializeDressup(config) {
     clothingOnCharacter[clothingType] = {
       uniqueId: uniqueId,
       originalElement: $clickedImg,
-      originalOffset: originalOffset  // Store the position
+      originalOffset: originalOffset,
+      originalWidth: originalWidth,
+      originalHeight: originalHeight,
+      hasCoords: hasCoords,
+      coord: coord
     };
     
-    // Hide the original item from the selection AFTER storing its position
-    $clickedImg.hide();
+    // Mark item as worn
+    $clickedImg.addClass('is-worn');
     
     // Move clone to body for animation with fixed positioning
     $clonedImg.css({
       position: 'fixed',
       left: clickedOffset.left,
       top: clickedOffset.top,
-      width: $clickedImg.width(),
-      height: $clickedImg.height(),
+      width: originalWidth,
+      height: originalHeight,
       zIndex: 1000,
       border: 'none',
       padding: 0,
@@ -75,35 +152,42 @@ function initializeDressup(config) {
     
     // Animate to character's position and resize
     $clonedImg.animate({
-      left: characterOffset.left,
-      top: characterOffset.top,
-      width: $character.width(),
-      height: $character.height()
-    }, 800, 'swing', function() {
-      // After animation, position it properly in the character container
-      $clonedImg.css({
-        position: 'absolute',
-        left: 0,
-        top: 0,
-        height: '600px',
-        width: 'auto',
-        border: 'none',
-        padding: 0,
-        margin: 0,
-        zIndex: 10,
-        cursor: 'pointer'
-      }).appendTo($characterContainer);
+      left: targetScreenLeft,
+      top: targetScreenTop,
+      width: targetWidthPx,
+      height: targetHeightPx
+    }, 450, 'swing', function() {
+      if (hasCoords && !isNaN(coord.left)) {
+        $clonedImg.css({
+          position: 'absolute',
+          left: coord.left + '%',
+          top: coord.top + '%',
+          width: coord.width + '%',
+          height: coord.height + '%',
+          zIndex: coord.zIndex,
+          cursor: 'pointer'
+        }).appendTo($characterContainer);
+      } else {
+        $clonedImg.css({
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          height: $character.height() ? $character.height() + 'px' : '600px',
+          width: 'auto',
+          border: 'none',
+          padding: 0,
+          margin: 0,
+          zIndex: coord.zIndex,
+          cursor: 'pointer'
+        }).appendTo($characterContainer);
+      }
       
-      // Add a specific class to identify clothing items on the character
       $clonedImg.addClass(clothingClass);
     });
   });
   
   // Handle clicks on clothing items overlaid on the character.
   // Uses transparency detection to pass clicks through to items underneath.
-  // SECURITY NOTE: `isClickOnTransparentArea()` uses canvas getImageData()
-  //   which will throw a SecurityError if the image is cross-origin.
-  //   The catch block handles this gracefully (assumes not transparent).
   $(document).on('click', '.' + clothingClass, function(e) {
     e.preventDefault();
     e.stopPropagation();
@@ -124,25 +208,18 @@ function initializeDressup(config) {
     let uniqueId = $clickedClothing.attr('data-clothing-id');
     let clothingType = $clickedClothing.attr('data-clothing-type');
     
-    // Get the original element to restore
     let originalData = clothingTracker[clothingType];
     if (originalData) {
       let $originalElement = originalData.originalElement;
-      let originalOffset = originalData.originalOffset; // Use stored position
+      let originalOffset = $originalElement.offset() || originalData.originalOffset;
       
-      // Get positions for return animation
       let currentOffset = $clickedClothing.offset();
-      
-      // Get current dimensions to maintain aspect ratio
       let currentWidth = $clickedClothing.width();
       let currentHeight = $clickedClothing.height();
-      let aspectRatio = currentWidth / currentHeight;
       
-      // Calculate target dimensions maintaining aspect ratio
-      let targetHeight = 200;
-      let targetWidth = targetHeight * aspectRatio;
+      let targetWidth = originalData.originalWidth;
+      let targetHeight = originalData.originalHeight;
       
-      // Move to body for animation
       $clickedClothing.css({
         position: 'fixed',
         left: currentOffset.left,
@@ -154,21 +231,27 @@ function initializeDressup(config) {
         cursor: 'pointer'
       }).appendTo('body');
       
-      // Animate back to original position
       $clickedClothing.animate({
         left: originalOffset.left,
         top: originalOffset.top,
         width: targetWidth,
         height: targetHeight
-      }, 600, 'swing', function() {
-        // Remove the clone and show the original
+      }, 400, 'swing', function() {
         $clickedClothing.remove();
-        $originalElement.show();
-        
-        // Remove from tracking
+        $originalElement.removeClass('is-worn');
         delete clothingTracker[clothingType];
       });
     }
+  }
+
+  // Reset button to remove all clothes from the character
+  if (resetSelector) {
+    $(resetSelector).on('click', function(e) {
+      e.preventDefault();
+      $('.' + clothingClass).each(function() {
+        removeClothingItem($(this), clothingOnCharacter);
+      });
+    });
   }
   
   // Function to recursively find the deepest clickable item at a point

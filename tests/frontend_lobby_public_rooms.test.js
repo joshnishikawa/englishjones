@@ -31,6 +31,7 @@ describe('Frontend Lobby Public Rooms Activity Filtering', () => {
       <div id="lobbyColumn" class="col-sm-4 mb-3">
         <div id="myGroup">
           <div id="roomname">my-room</div>
+          <div id="userCount">1 user</div>
           <div id="myPawn"></div>
           <div id="myName"></div>
           <button id="getName"></button>
@@ -336,6 +337,49 @@ describe('Frontend Lobby Public Rooms Activity Filtering', () => {
 
     $('#roomSearch').trigger('blur');
     expect($('#roomSearch').attr('placeholder')).toBe('join');
+  });
+
+  test('updates #userCount to show singular and plural user count', async () => {
+    const lobbyCode = fs.readFileSync(path.join(__dirname, '../public/javascripts/lobby/lobby.js'), 'utf8');
+    eval(lobbyCode);
+
+    await new Promise((r) => setTimeout(r, 20));
+
+    // Initially 1 user joined
+    const joinedHandler = socketMock.on.mock.calls.find((c) => c[0] === 'joined')[1];
+    joinedHandler({
+      room: {
+        roomname: 'my-room',
+        players: [{ id: 'Player1', color: '#ff0000', number: 1 }],
+      },
+      playerNum: 1,
+    });
+
+    expect($('#userCount').text()).toBe('1 user');
+
+    // Second player joins
+    const playerJoinedHandler = socketMock.on.mock.calls.find((c) => c[0] === 'playerJoined')[1];
+    playerJoinedHandler([
+      { id: 'Player1', color: '#ff0000', number: 1 },
+      { id: 'Player2', color: '#00ff00', number: 2 },
+    ]);
+
+    expect($('#userCount').text()).toBe('2 users');
+
+    // Third player joins
+    playerJoinedHandler([
+      { id: 'Player1', color: '#ff0000', number: 1 },
+      { id: 'Player2', color: '#00ff00', number: 2 },
+      { id: 'Player3', color: '#0000ff', number: 3 },
+    ]);
+
+    expect($('#userCount').text()).toBe('3 users');
+
+    // Player leaves room
+    const youLeftHandler = socketMock.on.mock.calls.find((c) => c[0] === 'youLeft')[1];
+    youLeftHandler();
+
+    expect($('#userCount').text()).toBe('1 user');
   });
 });
 

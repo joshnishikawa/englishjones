@@ -265,6 +265,10 @@ $(function(){
       localStorage.setItem('player', JSON.stringify(player));
     }
 
+    const userCount = playersList.length;
+    const userText = userCount === 1 ? '1 user' : `${userCount} users`;
+    $("#userCount").text(userText);
+
     if (room) {
       room.players = playersList;
       room.selectedHostActivity = hostSelected;
@@ -303,7 +307,9 @@ $(function(){
       const safeId = escapeHtml(p.id);
       const safeNum = parseInt(p.number, 10) || (i + 1);
 
-      if (p.id == player.id || (player.number && p.number == player.number)){
+      const isLocal = Boolean(p.id == player.id || (player.number && p.number == player.number));
+
+      if (isLocal){
         player.id = p.id;
         player.color = safeColor;
         $("#myPawn").html(getPawn(player.color));
@@ -361,18 +367,15 @@ $(function(){
     $(".activity").each(function() {
       const actId = $(this).attr("id");
       const isHostAct = $(this).data("group") === "host";
-      let count = activityCounts[actId] || 0;
       if (isHostAct && (room.selectedHostActivity === actId || player.activity === actId || room.activity === actId)) {
-        // Display number of joined players for selected host activity
-        count = Math.max(count, nonHostPlayers.length);
+        // Display joined players for selected host activity
         const $targetPawns = $(this).find(".activity-pawns");
-        if (count > 0 && $targetPawns.find(".pawn").length === 0) {
+        if (nonHostPlayers.length > 0 && $targetPawns.find(".pawn").length === 0) {
           nonHostPlayers.forEach(p => {
             $targetPawns.append(getPawn(p.color));
           });
         }
       }
-      $(this).find(".activity-count").text(count);
     });
 
     const isHost = Boolean(room && room.hostId && player.id === room.hostId);
@@ -511,9 +514,14 @@ $(function(){
     });
   }
 
-  function setColor(number, color) {
+  function setColor(number, color, id) {
     const safeColor = sanitizeColor(color);
-    if (number == player.number){
+    const isSelf = Boolean(
+      (id && player.id && id === player.id) ||
+      (!id && number !== undefined && player.number && number == player.number)
+    );
+
+    if (isSelf){
       player.color = safeColor;
       localStorage.setItem('player', JSON.stringify(player));
       $("#myPawn").html(getPawn(safeColor));
@@ -521,7 +529,7 @@ $(function(){
       $("#color").val(safeColor);
       
       if (room && room.players) {
-        let found = room.players.find(p => p.number == player.number || p.id == player.id);
+        let found = room.players.find(p => (player.id && p.id === player.id) || (player.number && p.number == player.number));
         if (found) {
           found.color = safeColor;
         }
@@ -531,14 +539,15 @@ $(function(){
       socket.emit('setColor', player);
     }
     else {
-      $(".pawn" + number).html(getPawn(safeColor));
-      $("#name" + number).css('color', safeColor);
       if (room && room.players) {
-        let found = room.players.find(p => p.number == number);
+        let found = room.players.find(p => (id && p.id === id) || (number !== undefined && p.number == number));
         if (found) {
           found.color = safeColor;
         }
         updatePlayerList(room.players);
+      } else if (number !== undefined) {
+        $(".pawn" + number).html(getPawn(safeColor));
+        $("#name" + number).css('color', safeColor);
       }
     }
   }
@@ -693,9 +702,9 @@ $(function(){
     getName();
   });
 
-  $("#color").on('change', function(){
+  $("#color").on('input change', function(){
     const color = $("#color").val();
-    setColor(player.number, color);
+    setColor(player.number, color, player.id);
   });
 
   $("#leaveGroup").on('click', function(){
@@ -995,6 +1004,7 @@ $(function(){
     // Clear UI elements
     $("#hostBadge").addClass("d-none");
     $("#activityRoomName").empty();
+    $("#userCount").text("1 user");
     $("#otherPlayers").empty();
     $(".activity").find(".pawn").remove();
     $("#foundplayers").empty();
@@ -1019,6 +1029,7 @@ $(function(){
 
     $("#hostBadge").addClass("d-none");
     $("#activityRoomName").empty();
+    $("#userCount").text("1 user");
     $("#otherPlayers").empty();
     $(".activity").find(".pawn").remove();
     $("#foundplayers").empty();
@@ -1038,14 +1049,14 @@ $(function(){
   socket.on('setColor', function(data){
     if (!data) return;
     if (room && room.players) {
-      let foundPlayer = room.players.find(p => p.number === data.number || p.id === data.id);
+      let foundPlayer = room.players.find(p => (data.id && p.id === data.id) || (data.number !== undefined && p.number == data.number));
       if (foundPlayer) {
         foundPlayer.color = data.color;
       }
     }
     
     // Update visual elements
-    setColor(data.number, data.color);
+    setColor(data.number, data.color, data.id);
   });
 
   socket.on('publicRoomsList', function(rooms){

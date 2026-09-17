@@ -659,7 +659,7 @@ const multiplayer = (io, options = {}) => {
       if (!data || typeof data !== 'object') return;
       if (!isStr(data.roomname, 60) || !isStr(data.id, 60)) return;
       if (!isStr(data.color, 20) || !/^#[0-9a-fA-F]{3,8}$/.test(data.color)) return;
-      let roomname = data.roomname;
+      let roomname = data.roomname.trim().toLowerCase();
       touchRoom(roomname);
       let room = publicRooms[roomname] || privateRooms[roomname];
 
@@ -668,10 +668,14 @@ const multiplayer = (io, options = {}) => {
         if (player) {
           player.color = data.color;
           socket.broadcast.to(roomname).emit("setColor", {
+            id: player.id,
             number: player.number,
             color: player.color,
             activity: player.activity, // Include activity so other players can update activity pawn
           });
+          if (publicRooms[roomname]) {
+            broadcastPublicRooms();
+          }
         }
       }
     });

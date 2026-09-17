@@ -1,47 +1,240 @@
 <%- include('../../head'); -%>
+
 <style>
-  #boyclothes img {
+  html, body {
+    overflow-x: hidden;
+  }
+
+  .dressup-shell {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 8px 16px;
+  }
+
+  .sentence-text {
+    font-size: 2.2rem;
+    line-height: 1.1;
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  /* Wardrobe Rack (No cards, No scrollbar) */
+  .wardrobe-rack {
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 10px 16px;
+    height: 600px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    overflow: hidden;
+  }
+
+  .rack-section {
+    border-bottom: 1px dashed #cbd5e1;
+    padding-bottom: 6px;
+  }
+
+  .rack-section:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .rack-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #64748b;
+    margin-bottom: 4px;
+    user-select: none;
+  }
+
+  .rack-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-around;
+    gap: 8px;
+  }
+
+  /* Clothing items */
+  .wardrobe-item {
+    cursor: pointer;
     object-fit: contain;
-    object-position: center;
-    height: 200px;
-    border: 1px solid #ccc;
+    transition: transform 0.16s ease, filter 0.16s ease, opacity 0.2s ease;
+    user-select: none;
+  }
+
+  .wardrobe-item:hover {
+    transform: scale(1.12);
+    filter: drop-shadow(0 4px 8px rgba(13, 110, 253, 0.4));
+  }
+
+  .wardrobe-item.is-worn {
+    opacity: 0.12;
+    filter: grayscale(1);
+    pointer-events: none;
+    transform: none;
+  }
+
+  /* Row heights for cropped aspect ratios */
+  .row-hats .wardrobe-item {
+    height: 62px;
+    max-width: 120px;
+  }
+
+  .row-tops .wardrobe-item {
+    height: 108px;
+    max-width: 110px;
+  }
+
+  .row-bottoms .wardrobe-item {
+    height: 118px;
+    max-width: 110px;
+  }
+
+  .row-shoes .wardrobe-item {
+    height: 54px;
+    max-width: 115px;
+  }
+
+  /* Character stage */
+  .stage-wrapper {
+    height: 600px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+  }
+
+  #boy {
+    height: 600px;
+    width: 200px;
+    position: relative;
+    margin: 0 auto;
+  }
+
+  #boy .boy-base {
+    height: 600px;
+    width: 200px;
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
+
+  .clothing-on-boy {
+    transition: filter 0.14s ease;
+  }
+
+  .clothing-on-boy:hover {
+    filter: drop-shadow(0 0 6px rgba(13, 110, 253, 0.8));
   }
 </style>
 
-<div class="container-fluid text-center g-0">
-  <!-- BOY SECTION -->
-  <div class="row g-0 mb-4">
-    <div class="col-md-9" style="max-height:600px;">
-      <span class="display-3 NH">Put on your </span><span class="display-3 NHline">|||||||||||||||.</span>
+<div class="container-fluid dressup-shell">
+  <!-- TOP BAR: REFERENCE SENTENCE + ACTIONS -->
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+    <!-- REFERENCE SENTENCE -->
+    <div class="d-flex align-items-center">
+      <span class="sentence-text NH">Put on your </span><span class="sentence-text NHline">|||||||||||||||.</span>
+    </div>
 
-      <div id="boyclothes" class="d-flex flex-wrap mt-3">
-        <img src="/image/dressup/boy/boots.png" alt="boots">
-        <img src="/image/dressup/boy/cap.png" alt="cap">
-        <img src="/image/dressup/boy/cargo_shorts.png" alt="cargo_shorts">
-        <img src="/image/dressup/boy/coat.png" alt="coat">
-        <img src="/image/dressup/boy/dog_T-shirt.png" alt="dog_T-shirt">
-        <img src="/image/dressup/boy/dress_shirt.png" alt="dress_shirt">
-        <img src="/image/dressup/boy/hat.png" alt="hat">
-        <img src="/image/dressup/boy/jeans.png" alt="jeans">
-        <img src="/image/dressup/boy/knit_cap.png" alt="knit_cap">
-        <img src="/image/dressup/boy/long-sleeve_T-shirt.png" alt="long-sleeve_T-shirt">
-        <img src="/image/dressup/boy/other_pants.png" alt="other_pants">
-        <img src="/image/dressup/boy/pants.png" alt="pants">
-        <img src="/image/dressup/boy/pjs.png" alt="pjs">
-        <img src="/image/dressup/boy/shirt.png" alt="shirt">
-        <img src="/image/dressup/boy/shorts.png" alt="shorts">
-        <img src="/image/dressup/boy/sneakers.png" alt="sneakers">
-        <img src="/image/dressup/boy/snow_boots.png" alt="snow_boots">
-        <img src="/image/dressup/boy/sunglasses.png" alt="sunglasses">
-        <img src="/image/dressup/boy/sweater.png" alt="sweater">
-        <img src="/image/dressup/girl/sunglasses.png" alt="sunglasses">
+    <!-- ACTIONS -->
+    <div class="d-inline-flex gap-2 align-items-center">
+      <button id="reset-btn" class="btn btn-outline-danger shadow-sm d-inline-flex align-items-center gap-1" title="Reset all clothes">
+        <i class="material-icons" style="font-size: 18px;">refresh</i>
+        <span>Reset</span>
+      </button>
+      <a href="/things/dressup/girl" class="btn btn-outline-primary shadow-sm d-inline-flex align-items-center gap-1" title="Switch to Girl">
+        <i class="material-icons" style="font-size: 18px;">face_3</i>
+        <span>Girl</span>
+      </a>
+      <button id="home" class="btn btn-outline-secondary shadow-sm d-inline-flex align-items-center p-2" onclick="location.href='/things';" aria-label="Home" title="Things Menu">
+        <i class="material-icons" style="font-size: 20px;">home</i>
+      </button>
+    </div>
+  </div>
+
+  <!-- MAIN INTERFACE ROW -->
+  <div class="row g-3 align-items-start">
+    <!-- WARDROBE RACK (NO CARDS, NO SCROLLBAR) -->
+    <div class="col-lg-9 col-md-8">
+      <div id="boyclothes" class="wardrobe-rack">
+        <!-- 1. HATS & ACCESSORIES -->
+        <div class="rack-section">
+          <div class="rack-title">Hats &amp; Glasses</div>
+          <div class="rack-row row-hats">
+            <img class="wardrobe-item" src="/image/dressup/boy/cropped/cap.png" alt="cap" title="Cap"
+                 data-left="14.4" data-top="3.7" data-width="71.1" data-height="11.73" data-zindex="40">
+            <img class="wardrobe-item" src="/image/dressup/boy/cropped/hat.png" alt="hat" title="Hat"
+                 data-left="17.4" data-top="4.1" data-width="65.2" data-height="11.37" data-zindex="40">
+            <img class="wardrobe-item" src="/image/dressup/boy/cropped/knit_cap.png" alt="knit_cap" title="Knit cap"
+                 data-left="22.1" data-top="2.27" data-width="55.6" data-height="20.8" data-zindex="40">
+            <img class="wardrobe-item" src="/image/dressup/boy/cropped/sunglasses.png" alt="sunglasses" title="Sunglasses"
+                 data-left="15.0" data-top="16.5" data-width="70.6" data-height="4.67" data-zindex="50">
+          </div>
+        </div>
+
+        <!-- 2. TOPS -->
+        <div class="rack-section">
+          <div class="rack-title">Tops</div>
+          <div class="rack-row row-tops">
+            <img class="wardrobe-item" src="/image/dressup/boy/cropped/shirt.png" alt="shirt" title="Shirt"
+                 data-left="9.6" data-top="28.83" data-width="80.9" data-height="24.27" data-zindex="20">
+            <img class="wardrobe-item" src="/image/dressup/boy/cropped/dog_T-shirt.png" alt="dog_T-shirt" title="Dog T-shirt"
+                 data-left="19.0" data-top="27.8" data-width="62.0" data-height="25.33" data-zindex="20">
+            <img class="wardrobe-item" src="/image/dressup/boy/cropped/dress_shirt.png" alt="dress_shirt" title="Dress shirt"
+                 data-left="10.5" data-top="28.63" data-width="78.9" data-height="28.83" data-zindex="20">
+            <img class="wardrobe-item" src="/image/dressup/boy/cropped/sweater.png" alt="sweater" title="Sweater"
+                 data-left="17.6" data-top="28.8" data-width="64.9" data-height="27.03" data-zindex="25">
+            <img class="wardrobe-item" src="/image/dressup/boy/cropped/coat.png" alt="coat" title="Coat"
+                 data-left="6.8" data-top="28.87" data-width="86.3" data-height="26.9" data-zindex="30">
+            <img class="wardrobe-item" src="/image/dressup/boy/cropped/long-sleeve_T-shirt.png" alt="long-sleeve_T-shirt" title="Long-sleeve T-shirt"
+                 data-left="7.6" data-top="28.23" data-width="84.0" data-height="26.67" data-zindex="20">
+            <img class="wardrobe-item" src="/image/dressup/boy/cropped/pjs.png" alt="pjs" title="Pajamas"
+                 data-left="17.4" data-top="27.97" data-width="66.7" data-height="63.2" data-zindex="20">
+          </div>
+        </div>
+
+        <!-- 3. BOTTOMS -->
+        <div class="rack-section">
+          <div class="rack-title">Bottoms</div>
+          <div class="rack-row row-bottoms">
+            <img class="wardrobe-item" src="/image/dressup/boy/cropped/shorts.png" alt="shorts" title="Shorts"
+                 data-left="21.5" data-top="50.8" data-width="57.0" data-height="17.47" data-zindex="10">
+            <img class="wardrobe-item" src="/image/dressup/boy/cropped/cargo_shorts.png" alt="cargo_shorts" title="Cargo shorts"
+                 data-left="20.7" data-top="50.8" data-width="58.9" data-height="21.4" data-zindex="10">
+            <img class="wardrobe-item" src="/image/dressup/boy/cropped/jeans.png" alt="jeans" title="Jeans"
+                 data-left="21.4" data-top="50.5" data-width="57.2" data-height="39.67" data-zindex="10">
+            <img class="wardrobe-item" src="/image/dressup/boy/cropped/pants.png" alt="pants" title="Pants"
+                 data-left="21.5" data-top="50.97" data-width="56.8" data-height="40.7" data-zindex="10">
+            <img class="wardrobe-item" src="/image/dressup/boy/cropped/other_pants.png" alt="other_pants" title="Brown pants"
+                 data-left="20.7" data-top="50.0" data-width="57.7" data-height="41.6" data-zindex="10">
+          </div>
+        </div>
+
+        <!-- 4. FOOTWEAR -->
+        <div class="rack-section">
+          <div class="rack-title">Footwear</div>
+          <div class="rack-row row-shoes">
+            <img class="wardrobe-item" src="/image/dressup/boy/cropped/sneakers.png" alt="sneakers" title="Sneakers"
+                 data-left="28.2" data-top="90.0" data-width="36.8" data-height="5.1" data-zindex="15">
+            <img class="wardrobe-item" src="/image/dressup/boy/cropped/boots.png" alt="boots" title="Boots"
+                 data-left="28.0" data-top="89.07" data-width="44.0" data-height="6.03" data-zindex="15">
+            <img class="wardrobe-item" src="/image/dressup/boy/cropped/snow_boots.png" alt="snow_boots" title="Snow boots"
+                 data-left="29.8" data-top="88.17" data-width="40.5" data-height="6.93" data-zindex="15">
+          </div>
+        </div>
       </div>
     </div>
-    <div class="col-md-3">
-      <div id="boy" style="height:600px;position:relative;">
-        <img src="/image/dressup/boy/_boy.png" style="height:600px;position:absolute;left:0;" alt="Boy">
-        <div id="home" class="btn btn-sm btn-outline-secondary p-0" style="position:absolute;right:0;" onclick="location.href='/things';">
-          <i class="material-icons">home</i>
+
+    <!-- CHARACTER STAGE -->
+    <div class="col-lg-3 col-md-4">
+      <div class="stage-wrapper">
+        <div id="boy">
+          <img src="/image/dressup/boy/_boy.png" alt="Boy" class="boy-base">
         </div>
       </div>
     </div>
@@ -52,12 +245,15 @@
 <script>
 $(function() {
   document.title = "Dressup (boy)";
-  // Initialize boy dressup with specific selectors
+
+  // Initialize boy dressup with coordinate-based placement
   initializeDressup({
     clothingSelector: '#boyclothes img',
     characterSelector: 'img[alt="Boy"]',
-    clothingClass: 'clothing-on-boy'
+    clothingClass: 'clothing-on-boy',
+    resetSelector: '#reset-btn'
   });
 });
 </script>
 <%- include('../../foot'); -%>
+

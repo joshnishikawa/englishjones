@@ -812,6 +812,47 @@
     }, 50);
   }
 
+  function onSetColor(data) {
+    if (!data) return;
+    if (currentPlayer && (data.id === currentPlayer.id || data.number == currentPlayer.number)) {
+      currentPlayer.color = data.color;
+    }
+    if (Array.isArray(playersList)) {
+      const target = playersList.find(p => (data.id && p.id === data.id) || (data.number !== undefined && p.number == data.number));
+      if (target) {
+        target.color = data.color;
+      }
+    }
+    const pId = data.id || (playersList && playersList.find(p => p.number == data.number)?.id);
+    if (pId && playerTokensMap[pId]) {
+      const safeColor = sanitizeColor(data.color);
+      playerTokensMap[pId].find('.vote-token-pawn').replaceWith($(getPawnSvg(safeColor)));
+      playerTokensMap[pId].find('.vote-token-initials').css('color', safeColor);
+    }
+  }
+
+  function onPlayerLeft(data) {
+    const remaining = Array.isArray(data) ? data : (data && data.players ? data.players : []);
+    playersList = remaining;
+    syncPawnsForPlayers(playersList);
+  }
+
+  function onSetName(data) {
+    if (!data || !data.id) return;
+    if (data.number === 1 || (currentRoom && currentRoom.hostId === data.id)) {
+      roomHostId = data.id;
+      if (currentPlayer) {
+        isHost = Boolean(currentPlayer.id === roomHostId);
+        if (isHost) {
+          $('#vote-arena').addClass('host-view');
+        } else {
+          $('#vote-arena').removeClass('host-view');
+        }
+        renderTopControls();
+      }
+    }
+  }
+
   function mount(options) {
     currentSocket = options.socket;
     currentPlayer = options.player;
@@ -870,34 +911,9 @@
     window.addEventListener('beforeprint', populatePrintReport);
 
     // Socket Event Handlers
-    currentSocket.on('setColor', function(data) {
-      if (!data) return;
-      if (currentPlayer && (data.number === currentPlayer.number || data.id === currentPlayer.id)) {
-        currentPlayer.color = data.color;
-      }
-    });
-
-    currentSocket.on('playerLeft', function(data) {
-      const remaining = Array.isArray(data) ? data : (data && data.players ? data.players : []);
-      playersList = remaining;
-      syncPawnsForPlayers(playersList);
-    });
-
-    currentSocket.on('setName', function(data) {
-      if (!data || !data.id) return;
-      if (data.number === 1 || (currentRoom && currentRoom.hostId === data.id)) {
-        roomHostId = data.id;
-        if (currentPlayer) {
-          isHost = Boolean(currentPlayer.id === roomHostId);
-          if (isHost) {
-            $('#vote-arena').addClass('host-view');
-          } else {
-            $('#vote-arena').removeClass('host-view');
-          }
-          renderTopControls();
-        }
-      }
-    });
+    currentSocket.on('setColor', onSetColor);
+    currentSocket.on('playerLeft', onPlayerLeft);
+    currentSocket.on('setName', onSetName);
 
     currentSocket.on('vote/sync', function(data) {
       if (!data) return;
@@ -1079,9 +1095,9 @@
       hostChartInstance = null;
     }
     if (socket) {
-      socket.off('setColor');
-      socket.off('setName');
-      socket.off('playerLeft');
+      socket.off('setColor', onSetColor);
+      socket.off('setName', onSetName);
+      socket.off('playerLeft', onPlayerLeft);
       socket.off('vote/sync');
       socket.off('vote/numberSelected');
       socket.off('vote/stageChanged');

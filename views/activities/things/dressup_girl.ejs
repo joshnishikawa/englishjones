@@ -1,58 +1,245 @@
 <%- include('../../head'); -%>
+
 <style>
-  #girlclothes img {
+  html, body {
+    overflow-x: hidden;
+  }
+
+  .dressup-shell {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 8px 16px;
+  }
+
+  .sentence-text {
+    font-size: 2.2rem;
+    line-height: 1.1;
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  /* Wardrobe Rack (No cards, No scrollbar) */
+  .wardrobe-rack {
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 10px 16px;
+    height: 600px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    overflow: hidden;
+  }
+
+  .rack-section {
+    border-bottom: 1px dashed #cbd5e1;
+    padding-bottom: 6px;
+  }
+
+  .rack-section:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .rack-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #64748b;
+    margin-bottom: 4px;
+    user-select: none;
+  }
+
+  .rack-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-around;
+    gap: 8px;
+  }
+
+  /* Clothing items */
+  .wardrobe-item {
+    cursor: pointer;
     object-fit: contain;
-    object-position: center;
-    height: 200px;
-    border: 1px solid #ccc;
+    transition: transform 0.16s ease, filter 0.16s ease, opacity 0.2s ease;
+    user-select: none;
+  }
+
+  .wardrobe-item:hover {
+    transform: scale(1.12);
+    filter: drop-shadow(0 4px 8px rgba(13, 110, 253, 0.4));
+  }
+
+  .wardrobe-item.is-worn {
+    opacity: 0.12;
+    filter: grayscale(1);
+    pointer-events: none;
+    transform: none;
+  }
+
+  /* Row heights for cropped aspect ratios */
+  .row-hats .wardrobe-item {
+    height: 62px;
+    max-width: 120px;
+  }
+
+  .row-tops .wardrobe-item {
+    height: 108px;
+    max-width: 95px;
+  }
+
+  .row-bottoms .wardrobe-item {
+    height: 118px;
+    max-width: 110px;
+  }
+
+  .row-shoes .wardrobe-item {
+    height: 52px;
+    max-width: 100px;
+  }
+
+  /* Character stage */
+  .stage-wrapper {
+    height: 600px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+  }
+
+  #girl {
+    height: 600px;
+    width: 200px;
+    position: relative;
+    margin: 0 auto;
+  }
+
+  #girl .girl-base {
+    height: 600px;
+    width: 200px;
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
+
+  .clothing-on-girl {
+    transition: filter 0.14s ease;
+  }
+
+  .clothing-on-girl:hover {
+    filter: drop-shadow(0 0 6px rgba(13, 110, 253, 0.8));
   }
 </style>
 
-<div class="container-fluid text-center g-0">
-  <!-- GIRL SECTION -->
-  <div class="row g-0">
-    <div class="col-md-9" style="max-height:600px;">
-      <span class="display-3 NH">Put on your </span><span class="display-3 NHline">|||||||||||||||.</span>
-
-      <div id="girlclothes" class="d-flex flex-wrap mt-3">
-        <img src="/image/dressup/girl/T-shirt.png" alt="T-shirt">
-        <img src="/image/dressup/girl/blouse.png" alt="blouse">
-        <img src="/image/dressup/girl/cap.png" alt="cap">
-        <img src="/image/dressup/girl/cargo_shorts.png" alt="cargo_shorts">
-        <img src="/image/dressup/girl/cargo_skirt.png" alt="cargo_skirt">
-        <img src="/image/dressup/girl/coat.png" alt="coat">
-        <img src="/image/dressup/girl/dress.png" alt="dress">
-        <img src="/image/dressup/girl/hiking_boots.png" alt="hiking_boots">
-        <img src="/image/dressup/girl/jeans.png" alt="jeans">
-        <img src="/image/dressup/girl/knit_cap.png" alt="knit_cap">
-        <img src="/image/dressup/girl/ong-sleeve_T-shirt.png" alt="ong-sleeve_T-shirt">
-        <img src="/image/dressup/girl/pants.png" alt="pants">
-        <img src="/image/dressup/girl/pjs.png" alt="pjs">
-        <img src="/image/dressup/girl/shirt.png" alt="shirt">
-        <img src="/image/dressup/girl/shoes.png" alt="shoes">
-        <img src="/image/dressup/girl/skirt.png" alt="skirt">
-        <img src="/image/dressup/girl/sneakers.png" alt="sneakers">
-        <img src="/image/dressup/girl/snow_boots.png" alt="snow_boots">
-        <img src="/image/dressup/girl/sunglasses.png" alt="sunglasses">
-        <img src="/image/dressup/girl/sweater.png" alt="sweater">
-        <img src="/image/dressup/girl/vest.png" alt="vest">
-
-        <img src="/image/dressup/boy/cap.png" alt="cap">
-        <img src="/image/dressup/boy/cargo_shorts.png" alt="cargo_shorts">
-        <img src="/image/dressup/boy/coat.png" alt="coat">
-        <img src="/image/dressup/boy/hat.png" alt="hat">
-        <img src="/image/dressup/boy/knit_cap.png" alt="knit_cap">
-        <img src="/image/dressup/boy/shorts.png" alt="shorts">
-
-      </div>
+<div class="container-fluid dressup-shell">
+  <!-- TOP BAR: REFERENCE SENTENCE + ACTIONS -->
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+    <!-- REFERENCE SENTENCE -->
+    <div class="d-flex align-items-center">
+      <span class="sentence-text NH">Put on your </span><span class="sentence-text NHline">|||||||||||||||.</span>
     </div>
-    <div class="col-md-3">
-      <div id="girl" style="height:600px;position:relative;">
-        <img src="/image/dressup/girl/_girl.png" style="height:600px;position:absolute;left:0;" alt="Girl">
-        <div id="home" class="btn btn-sm btn-outline-secondary p-0" style="position:absolute;right:0;" onclick="location.href='/things';">
-          <i class="material-icons">home</i>
+
+    <!-- ACTIONS -->
+    <div class="d-inline-flex gap-2 align-items-center">
+      <button id="reset-btn" class="btn btn-outline-danger shadow-sm d-inline-flex align-items-center gap-1" title="Reset all clothes">
+        <i class="material-icons" style="font-size: 18px;">refresh</i>
+        <span>Reset</span>
+      </button>
+      <a href="/things/dressup/boy" class="btn btn-outline-primary shadow-sm d-inline-flex align-items-center gap-1" title="Switch to Boy">
+        <i class="material-icons" style="font-size: 18px;">face</i>
+        <span>Boy</span>
+      </a>
+      <button id="home" class="btn btn-outline-secondary shadow-sm d-inline-flex align-items-center p-2" onclick="location.href='/things';" aria-label="Home" title="Things Menu">
+        <i class="material-icons" style="font-size: 20px;">home</i>
+      </button>
+    </div>
+  </div>
+
+  <!-- MAIN INTERFACE ROW -->
+  <div class="row g-3 align-items-start">
+    <!-- WARDROBE RACK (NO CARDS, NO SCROLLBAR) -->
+    <div class="col-lg-9 col-md-8">
+      <div id="girlclothes" class="wardrobe-rack">
+        <!-- 1. HATS & ACCESSORIES -->
+        <div class="rack-section">
+          <div class="rack-title">Hats &amp; Glasses</div>
+          <div class="rack-row row-hats">
+            <img class="wardrobe-item" src="/image/dressup/girl/cropped/cap.png" alt="cap" title="Cap"
+                 data-left="6.70" data-top="6.43" data-width="77.70" data-height="12.03" data-zindex="40">
+            <img class="wardrobe-item" src="/image/dressup/girl/cropped/knit_cap.png" alt="knit_cap" title="Knit cap"
+                 data-left="14.50" data-top="3.70" data-width="71.00" data-height="16.40" data-zindex="40">
+            <img class="wardrobe-item" src="/image/dressup/girl/cropped/sunglasses.png" alt="sunglasses" title="Sunglasses"
+                 data-left="15.00" data-top="18.97" data-width="67.90" data-height="4.03" data-zindex="50">
+          </div>
         </div>
 
+        <!-- 2. TOPS -->
+        <div class="rack-section">
+          <div class="rack-title">Tops</div>
+          <div class="rack-row row-tops">
+            <img class="wardrobe-item" src="/image/dressup/girl/cropped/T-shirt.png" alt="T-shirt" title="T-shirt"
+                 data-left="26.30" data-top="33.63" data-width="47.30" data-height="20.33" data-zindex="20">
+            <img class="wardrobe-item" src="/image/dressup/girl/cropped/blouse.png" alt="blouse" title="Blouse"
+                 data-left="26.00" data-top="31.20" data-width="48.00" data-height="21.90" data-zindex="20">
+            <img class="wardrobe-item" src="/image/dressup/girl/cropped/shirt.png" alt="shirt" title="Shirt"
+                 data-left="16.00" data-top="31.13" data-width="68.00" data-height="23.60" data-zindex="20">
+            <img class="wardrobe-item" src="/image/dressup/girl/cropped/ong-sleeve_T-shirt.png" alt="ong-sleeve_T-shirt" title="Long-sleeve T-shirt"
+                 data-left="13.90" data-top="30.37" data-width="72.40" data-height="24.33" data-zindex="20">
+            <img class="wardrobe-item" src="/image/dressup/girl/cropped/sweater.png" alt="sweater" title="Sweater"
+                 data-left="13.90" data-top="29.80" data-width="72.20" data-height="28.70" data-zindex="25">
+            <img class="wardrobe-item" src="/image/dressup/girl/cropped/vest.png" alt="vest" title="Vest"
+                 data-left="23.80" data-top="30.77" data-width="52.50" data-height="23.10" data-zindex="28">
+            <img class="wardrobe-item" src="/image/dressup/girl/cropped/coat.png" alt="coat" title="Coat"
+                 data-left="12.00" data-top="31.13" data-width="76.10" data-height="39.97" data-zindex="30">
+            <img class="wardrobe-item" src="/image/dressup/girl/cropped/dress.png" alt="dress" title="Dress"
+                 data-left="20.40" data-top="31.23" data-width="59.30" data-height="40.93" data-zindex="20">
+            <img class="wardrobe-item" src="/image/dressup/girl/cropped/pjs.png" alt="pjs" title="Pajamas"
+                 data-left="18.90" data-top="31.97" data-width="73.90" data-height="59.83" data-zindex="20">
+          </div>
+        </div>
+
+        <!-- 3. BOTTOMS -->
+        <div class="rack-section">
+          <div class="rack-title">Bottoms</div>
+          <div class="rack-row row-bottoms">
+            <img class="wardrobe-item" src="/image/dressup/girl/cropped/skirt.png" alt="skirt" title="Skirt"
+                 data-left="21.60" data-top="51.50" data-width="56.80" data-height="21.57" data-zindex="10">
+            <img class="wardrobe-item" src="/image/dressup/girl/cropped/cargo_skirt.png" alt="cargo_skirt" title="Cargo skirt"
+                 data-left="18.80" data-top="51.70" data-width="60.90" data-height="11.73" data-zindex="10">
+            <img class="wardrobe-item" src="/image/dressup/girl/cropped/cargo_shorts.png" alt="cargo_shorts" title="Cargo shorts"
+                 data-left="19.60" data-top="52.57" data-width="63.90" data-height="21.23" data-zindex="10">
+            <img class="wardrobe-item" src="/image/dressup/girl/cropped/pants.png" alt="pants" title="Pants"
+                 data-left="20.30" data-top="51.73" data-width="61.00" data-height="37.90" data-zindex="10">
+            <img class="wardrobe-item" src="/image/dressup/girl/cropped/jeans.png" alt="jeans" title="Jeans"
+                 data-left="20.70" data-top="52.00" data-width="58.90" data-height="38.10" data-zindex="10">
+          </div>
+        </div>
+
+        <!-- 4. FOOTWEAR -->
+        <div class="rack-section">
+          <div class="rack-title">Footwear</div>
+          <div class="rack-row row-shoes">
+            <img class="wardrobe-item" src="/image/dressup/girl/cropped/shoes.png" alt="shoes" title="Shoes"
+                 data-left="34.00" data-top="91.00" data-width="31.70" data-height="3.27" data-zindex="15">
+            <img class="wardrobe-item" src="/image/dressup/girl/cropped/sneakers.png" alt="sneakers" title="Sneakers"
+                 data-left="39.50" data-top="90.13" data-width="25.70" data-height="4.07" data-zindex="15">
+            <img class="wardrobe-item" src="/image/dressup/girl/cropped/hiking_boots.png" alt="hiking_boots" title="Hiking boots"
+                 data-left="39.30" data-top="89.63" data-width="21.30" data-height="4.50" data-zindex="15">
+            <img class="wardrobe-item" src="/image/dressup/girl/cropped/snow_boots.png" alt="snow_boots" title="Snow boots"
+                 data-left="34.70" data-top="87.63" data-width="30.60" data-height="6.47" data-zindex="15">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHARACTER STAGE -->
+    <div class="col-lg-3 col-md-4">
+      <div class="stage-wrapper">
+        <div id="girl">
+          <img src="/image/dressup/girl/_girl.png" alt="Girl" class="girl-base">
+        </div>
       </div>
     </div>
   </div>
@@ -62,11 +249,13 @@
 <script>
 $(function() {
   document.title = "Dressup (girl)";
-  // Initialize girl dressup with specific selectors
+
+  // Initialize girl dressup with coordinate-based placement
   initializeDressup({
     clothingSelector: '#girlclothes img',
     characterSelector: 'img[alt="Girl"]',
-    clothingClass: 'clothing-on-girl'
+    clothingClass: 'clothing-on-girl',
+    resetSelector: '#reset-btn'
   });
 });
 </script>
