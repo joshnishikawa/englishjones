@@ -33,7 +33,7 @@ describe('Frontend Lobby Color Synchronization', () => {
       <div id="lobbyColumn" class="col-sm-4 mb-3">
         <div id="myGroup">
           <div id="roomname">my-room</div>
-          <div id="userCount">1 user</div>
+          <div id="userCount">1 Host<br>0 Guests</div>
           <div id="myPawn"></div>
           <div id="myName"></div>
           <button id="getName"></button>

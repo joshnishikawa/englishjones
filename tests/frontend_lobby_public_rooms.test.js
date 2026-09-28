@@ -31,7 +31,7 @@ describe('Frontend Lobby Public Rooms Activity Filtering', () => {
       <div id="lobbyColumn" class="col-sm-4 mb-3">
         <div id="myGroup">
           <div id="roomname">my-room</div>
-          <div id="userCount">1 user</div>
+          <div id="userCount">1 Host<br>0 Guests</div>
           <div id="myPawn"></div>
           <div id="myName"></div>
           <button id="getName"></button>
@@ -339,7 +339,7 @@ describe('Frontend Lobby Public Rooms Activity Filtering', () => {
     expect($('#roomSearch').attr('placeholder')).toBe('join');
   });
 
-  test('updates #userCount to show singular and plural user count', async () => {
+  test('updates #userCount to show host and guest count', async () => {
     const lobbyCode = fs.readFileSync(path.join(__dirname, '../public/javascripts/lobby/lobby.js'), 'utf8');
     eval(lobbyCode);
 
@@ -355,7 +355,7 @@ describe('Frontend Lobby Public Rooms Activity Filtering', () => {
       playerNum: 1,
     });
 
-    expect($('#userCount').text()).toBe('1 user');
+    expect($('#userCount').html()).toBe('1 Host<br>0 Guests');
 
     // Second player joins
     const playerJoinedHandler = socketMock.on.mock.calls.find((c) => c[0] === 'playerJoined')[1];
@@ -364,7 +364,7 @@ describe('Frontend Lobby Public Rooms Activity Filtering', () => {
       { id: 'Player2', color: '#00ff00', number: 2 },
     ]);
 
-    expect($('#userCount').text()).toBe('2 users');
+    expect($('#userCount').html()).toBe('1 Host<br>1 Guest');
 
     // Third player joins
     playerJoinedHandler([
@@ -373,13 +373,13 @@ describe('Frontend Lobby Public Rooms Activity Filtering', () => {
       { id: 'Player3', color: '#0000ff', number: 3 },
     ]);
 
-    expect($('#userCount').text()).toBe('3 users');
+    expect($('#userCount').html()).toBe('1 Host<br>2 Guests');
 
     // Player leaves room
     const youLeftHandler = socketMock.on.mock.calls.find((c) => c[0] === 'youLeft')[1];
     youLeftHandler();
 
-    expect($('#userCount').text()).toBe('1 user');
+    expect($('#userCount').html()).toBe('1 Host<br>0 Guests');
   });
 });
 

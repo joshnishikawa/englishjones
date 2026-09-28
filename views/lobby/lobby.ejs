@@ -26,24 +26,6 @@
 <%- include('../head') -%>
 
 <style>
-  .activity .pawn {
-    width: 32px;
-    height: 16px;
-    display: inline-block;
-  }
-
-  .activity .host-pawn {
-    width: 24px;
-    height: 20px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .activity .host-pawn .pawn {
-    width: 24px;
-    height: 16px;
-  }
 
   #activityExit {
     width: 48px;
@@ -88,7 +70,7 @@
 
             <div class="col-3">
               Group:
-              <div id="userCount" class="small text-muted">1 user</div>
+              <div id="userCount" class="small text-muted lh-sm">1 Host<br>0 Guests</div>
             </div>
 
             <div class="col-9 display-1 YM" style="margin-top:-15px;margin-bottom:5px;">
@@ -186,11 +168,7 @@
           <div id="standardActivities" style="display:none;"> <!-- UNCOMMENT WHEN THESE ACTIVITIES ARE READY -->
             <% activities.filter(a => a.group !== 'host').forEach(function(activity){ %>
               <button class="btn btn-outline-primary activity d-flex justify-content-between align-items-center w-100 mb-2" id="<%= activity.id %>" data-group="standard" title="<%= activity.label %> activity" aria-label="<%= activity.label %> activity">
-                <span class="activity-left d-flex align-items-center gap-2">
-                  <span class="host-pawn"></span>
-                  <span class="activity-label"><%= activity.label %></span>
-                </span>
-                <span class="activity-pawns d-flex align-items-center"></span>
+                <span class="activity-label"><%= activity.label %></span>
               </button>
             <% }); %>
             <hr />
@@ -206,7 +184,6 @@
                   <span class="activity-label">
                     <%= activity.label %>
                   </span>
-                  <span class="activity-pawns d-flex align-items-center"></span>
                   <div>
                     <button class="btn btn-sm btn-success start-activity-btn d-none" data-activity="<%= activity.id %>" 
                           title="Start <%= activity.label %>" aria-label="Start <%= activity.label %>">
