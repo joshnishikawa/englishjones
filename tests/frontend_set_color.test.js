@@ -310,4 +310,28 @@ describe('Frontend Lobby Color Synchronization', () => {
 
     expect($('#otherPlayers').html()).toContain('#abcdef');
   });
+
+  test('otherPlayers renders space-efficient cards with newline in two-part names and wrapping flex container', async () => {
+    storage['player'] = JSON.stringify({
+      id: 'Player1',
+      number: 1,
+      color: '#ff0000',
+      roomname: 'my-room',
+      roomtype: 'private',
+    });
+
+    const lobbyCode = fs.readFileSync(path.join(__dirname, '../public/javascripts/lobby/lobby.js'), 'utf8');
+    eval(lobbyCode);
+
+    await new Promise((r) => setTimeout(r, 20));
+
+    socketOnHandlers['playerJoined']([
+      { id: 'Player1', color: '#ff0000', number: 1 },
+      { id: 'Happy Panda', color: '#0000ff', number: 2 },
+    ]);
+
+    expect($('#otherPlayers').hasClass('d-flex')).toBe(true);
+    expect($('#otherPlayers').hasClass('flex-wrap')).toBe(true);
+    expect($('#name2').html()).toBe('Happy<br>Panda');
+  });
 });

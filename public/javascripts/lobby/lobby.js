@@ -294,7 +294,7 @@ $(function(){
       $leaveGroup.hide();
     }
 
-    $otherPlayers.empty();
+    $otherPlayers.empty().addClass("d-flex flex-wrap gap-2");
     $(".host-pawn").empty();
     $(".activity-pawns").empty();
     $activities.find(".pawn").remove();
@@ -318,14 +318,11 @@ $(function(){
         localStorage.setItem('player', JSON.stringify(player));
       }
       else {
+        const formattedName = safeId.replace(' ', '<br>');
         otherPlayersHTML += `
-          <div class="row bg-light border border-primary rounded-3 my-1">
-            <div class="col-2">
-              <div class="pawn${safeNum} text-center my-1" style="margin:auto;width:24px;">${getPawn(safeColor)}</div>
-            </div>
-            <div class="col-10">
-              <div id="name${safeNum}" class="fs-4 text-break" style="color: ${safeColor};text-shadow:0px 0px 2px #555;">${safeId}</div>
-            </div>
+          <div class="bg-light border border-primary rounded-3 p-1 px-2 d-flex align-items-center">
+            <div class="pawn${safeNum} text-center me-1" style="width:20px;flex-shrink:0;">${getPawn(safeColor)}</div>
+            <div id="name${safeNum}" class="small fw-semibold lh-sm text-center text-break" style="color: ${safeColor};text-shadow:0px 0px 1px #555; white-space: pre-line;">${formattedName}</div>
           </div>
         `;
       }
