@@ -171,4 +171,44 @@ describe('Frontend Raffle Activity - Reveal & Refresh Animation', () => {
     expect(firstCardElementAfterSync).toBe(firstCardElementBeforeSync);
     expect($('#raffle-flip-0').hasClass('is-flipped')).toBe(true);
   });
+
+  test('printable results table is sorted by the selected numbers in ascending order', () => {
+    window.hostedActivities.raffle.mount({
+      socket: socketMock,
+      player: { id: 'HostTeacher', roomname: 'test-room', number: 1, color: '#ff0000', isHost: true },
+      room: { hostId: 'HostTeacher', players: [{ id: 'HostTeacher', number: 1 }] },
+      isHost: true,
+    });
+
+    socketHandlers['raffle/revealed']({
+      shuffledValues: ['Prize 1', 'Prize 2', 'Prize 3', 'Prize 4'],
+      emojis: ['🍎', '🍌', '🍇', '🍒'],
+      claimedEmojis: {},
+      results: [
+        { playerId: 'Charlie', selectedNumber: 10, revealedValue: 'Prize 4' },
+        { playerId: 'Alice', selectedNumber: 2, revealedValue: 'Prize 1' },
+        { playerId: 'David', selectedNumber: null, revealedValue: 'Prize 3' },
+        { playerId: 'Bob', selectedNumber: 5, revealedValue: 'Prize 2' },
+      ],
+    });
+
+    const $rows = $('#raffle-results-table-body tr');
+    expect($rows.length).toBe(4);
+
+    // Row 0: Alice (2)
+    expect($rows.eq(0).find('td').eq(0).text()).toBe('Alice');
+    expect($rows.eq(0).find('td').eq(1).text()).toBe('2');
+
+    // Row 1: Bob (5)
+    expect($rows.eq(1).find('td').eq(0).text()).toBe('Bob');
+    expect($rows.eq(1).find('td').eq(1).text()).toBe('5');
+
+    // Row 2: Charlie (10)
+    expect($rows.eq(2).find('td').eq(0).text()).toBe('Charlie');
+    expect($rows.eq(2).find('td').eq(1).text()).toBe('10');
+
+    // Row 3: David (—)
+    expect($rows.eq(3).find('td').eq(0).text()).toBe('David');
+    expect($rows.eq(3).find('td').eq(1).text()).toBe('—');
+  });
 });

@@ -137,7 +137,7 @@ function buildResultsTable(state) {
   const playersList = Array.from(state.players.values()).filter((p) => p.id !== state.hostId);
   const targetPlayers = playersList.length > 0 ? playersList : Array.from(state.players.values());
 
-  return targetPlayers.map((p) => {
+  const results = targetPlayers.map((p) => {
     const chosenNumber = state.numberSelections.get(p.id) || null;
     const emojiData = state.emojiSelections.get(p.id) || null;
     const emojiIndex = emojiData ? emojiData.emojiIndex : null;
@@ -156,6 +156,33 @@ function buildResultsTable(state) {
       revealedValue: prize,
     };
   });
+
+  results.sort((a, b) => {
+    const getSortNum = (val) => {
+      if (val === null || val === undefined || val === '') return Infinity;
+      const num = Number(val);
+      return isNaN(num) ? Infinity : num;
+    };
+
+    const numA = getSortNum(a.selectedNumber);
+    const numB = getSortNum(b.selectedNumber);
+
+    if (numA !== numB) {
+      return numA - numB;
+    }
+
+    const pNumA = (a.playerNumber !== null && a.playerNumber !== undefined && !isNaN(Number(a.playerNumber))) ? Number(a.playerNumber) : 0;
+    const pNumB = (b.playerNumber !== null && b.playerNumber !== undefined && !isNaN(Number(b.playerNumber))) ? Number(b.playerNumber) : 0;
+    if (pNumA !== pNumB) {
+      return pNumA - pNumB;
+    }
+
+    const nameA = String(a.playerId || '');
+    const nameB = String(b.playerId || '');
+    return nameA.localeCompare(nameB);
+  });
+
+  return results;
 }
 
 const raffleEvents = (io, socket, touchRoom) => {

@@ -429,5 +429,72 @@ describe('Raffle Hosted Activity Socket Handlers', () => {
       ]),
     }));
   });
+
+  test('results table is sorted by the selected numbers in ascending order', () => {
+    socketHost.trigger('raffle/ready', {
+      roomname,
+      playerId: 'HostTeacher',
+      playerNumber: 1,
+      isHost: true,
+      values: ['Prize 1', 'Prize 2', 'Prize 3'],
+    });
+
+    socketGuest1.trigger('raffle/ready', {
+      roomname,
+      playerId: 'StudentA',
+      playerNumber: 2,
+      isHost: false,
+    });
+
+    socketGuest2.trigger('raffle/ready', {
+      roomname,
+      playerId: 'StudentB',
+      playerNumber: 3,
+      isHost: false,
+    });
+
+    // StudentA picks number 3
+    socketGuest1.trigger('raffle/selectNumber', {
+      roomname,
+      playerId: 'StudentA',
+      number: 3,
+    });
+
+    // StudentB picks number 1
+    socketGuest2.trigger('raffle/selectNumber', {
+      roomname,
+      playerId: 'StudentB',
+      number: 1,
+    });
+
+    socketHost.trigger('raffle/setNumbers', {
+      roomname,
+      id: 'HostTeacher',
+    });
+
+    socketGuest1.trigger('raffle/selectEmoji', {
+      roomname,
+      playerId: 'StudentA',
+      emojiIndex: 0,
+    });
+
+    socketGuest2.trigger('raffle/selectEmoji', {
+      roomname,
+      playerId: 'StudentB',
+      emojiIndex: 1,
+    });
+
+    socketHost.trigger('raffle/reveal', {
+      roomname,
+      id: 'HostTeacher',
+    });
+
+    expect(ioMock.emit).toHaveBeenCalledWith('raffle/revealed', expect.objectContaining({
+      results: [
+        expect.objectContaining({ playerId: 'StudentB', selectedNumber: 1 }),
+        expect.objectContaining({ playerId: 'StudentA', selectedNumber: 3 }),
+      ],
+    }));
+  });
 });
 

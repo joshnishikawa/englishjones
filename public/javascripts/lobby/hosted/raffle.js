@@ -369,10 +369,35 @@
     $tbody.empty();
 
     if (Array.isArray(results)) {
-      results.forEach((row) => {
+      const getSortNum = (val) => {
+        if (val === null || val === undefined || val === '') return Infinity;
+        const num = Number(val);
+        return isNaN(num) ? Infinity : num;
+      };
+
+      const sortedResults = [...results].sort((a, b) => {
+        const numA = getSortNum(a ? a.selectedNumber : null);
+        const numB = getSortNum(b ? b.selectedNumber : null);
+
+        if (numA !== numB) {
+          return numA - numB;
+        }
+
+        const pNumA = (a && a.playerNumber !== null && a.playerNumber !== undefined && !isNaN(Number(a.playerNumber))) ? Number(a.playerNumber) : 0;
+        const pNumB = (b && b.playerNumber !== null && b.playerNumber !== undefined && !isNaN(Number(b.playerNumber))) ? Number(b.playerNumber) : 0;
+        if (pNumA !== pNumB) {
+          return pNumA - pNumB;
+        }
+
+        const nameA = String((a && a.playerId) || '');
+        const nameB = String((b && b.playerId) || '');
+        return nameA.localeCompare(nameB);
+      });
+
+      sortedResults.forEach((row) => {
         const $tr = $('<tr>');
         $tr.append($('<td>', { text: row.playerId || '—' }));
-        $tr.append($('<td>', { text: row.selectedNumber !== null ? row.selectedNumber : '—' }));
+        $tr.append($('<td>', { text: (row.selectedNumber !== null && row.selectedNumber !== undefined) ? row.selectedNumber : '—' }));
         $tr.append($('<td>', { text: row.revealedValue || '—' }));
         $tbody.append($tr);
       });
