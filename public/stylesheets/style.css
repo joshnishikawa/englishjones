@@ -44,7 +44,7 @@ body {
   padding-right: 0.25rem;
 }
 
-.nav-item{
+.nav.flex-column .nav-item{
   border: #ccc 1px solid;
   border-radius: 0 10px 10px 0;
 }
@@ -71,6 +71,11 @@ body {
 
 .nav-tabs:not(.flex-column){
   box-shadow: inset 0px -9px 9px -9px rgba(0,0,0,0.3);
+}
+
+.nav-tabs:not(.flex-column) .nav-item{
+  border: #ccc 1px solid;
+  border-radius: 10px 10px 0 0;
 }
 
 .nav-tabs:not(.flex-column) .nav-link.active{

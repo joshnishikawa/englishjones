@@ -2,18 +2,14 @@
   <ul class="nav nav-tabs bg-white d-flex pt-1 mb-3 YM" style="position:relative;">
     <%- include('../menu/item_slots'); -%>
 
-      <li class="nav-item"><a id="datetime" href="slots?page=datetime" class="item nav-link" data-toggle="tab">What's
-          the date?</a></li>
-      <li class="nav-item"><a id="thisis" href="slots?page=thisis" class="item nav-link" data-toggle="tab">Who is
-          this?</a></li>
-      <li class="nav-item"><a id="weekend" href="slots?page=weekend" class="item nav-link" data-toggle="tab">How was
-          your weekend?</a></li>
-      <li class="nav-item"><a id="countries" href="slots?page=countries" class="item nav-link" data-toggle="tab">Where
-          do you want to go?</a></li>
-      <button id="home" class="btn btn-sm btn-outline-secondary p-0" style="position:absolute;right:0;"
-        onclick="location.href='/NH'">
-        <i class="material-icons">home</i>
-      </button>
+    <li class="nav-item"><a id="datetime" href="slots?page=datetime" class="item nav-link" data-toggle="tab">What's the date?</a></li>
+    <li class="nav-item"><a id="thisis" href="slots?page=thisis" class="item nav-link" data-toggle="tab">Who is this?</a></li>
+    <li class="nav-item"><a id="weekend" href="slots?page=weekend" class="item nav-link" data-toggle="tab">How was your weekend?</a></li>
+    <li class="nav-item"><a id="countries" href="slots?page=countries" class="item nav-link" data-toggle="tab">Where do you want to go?</a></li>
+    <button id="home" class="btn btn-sm btn-outline-secondary p-0" style="position:absolute;right:0;"
+      onclick="location.href='/NH'">
+      <i class="material-icons">home</i>
+    </button>
   </ul>
 
   <div id="content" class="pt-3" style="height:100vh"></div>
@@ -25,14 +21,9 @@
       $("form button[type=submit]").hide();
 
       // load page from query string
-      let page = new URLSearchParams(window.location.search).get('page');
-      if (page) {
-        $('#content').load(`/public/pages/slots/${page}.html`);
-      }
-      else {
-        // default to datetime
-        $('#content').load(`/public/pages/slots/datetime.html`);
-      }
+      let page = new URLSearchParams(window.location.search).get('page') || 'datetime';
+      $(`#${page}`).addClass('active disabled');
+      $('#content').load(`/public/pages/slots/${page}.html`);
 
       spinit = (slot, id) => {
         id = id.replace(/ /g, '_'); // replace spaces with underscores
