@@ -62,7 +62,7 @@ describe('Things Router', () => {
   });
 
   describe('GET /things/:activity', () => {
-    const validActivities = ['room', 'shapes', 'colors', 'supplies', 'snake'];
+    const validActivities = ['room', 'shapes', 'colors', 'supplies', 'snake', 'map'];
 
     validActivities.forEach(activity => {
       test(`should render activities/things/${activity} for valid activity`, async () => {
