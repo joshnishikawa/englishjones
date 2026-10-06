@@ -218,11 +218,22 @@
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
   }
 
-  /* Upload button on card hover */
-  .img-upload-btn {
+  /* Room hover action buttons */
+  .room-actions {
     position: absolute;
     top: 4px;
     right: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.15s ease-in-out;
+    z-index: 10;
+  }
+  .room-box:hover .room-actions {
+    opacity: 1;
+  }
+  .room-action-btn {
     width: 24px;
     height: 24px;
     border-radius: 50%;
@@ -232,17 +243,22 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    opacity: 0;
-    transition: opacity 0.15s, background 0.15s;
-    z-index: 10;
     cursor: pointer;
     padding: 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    transition: background-color 0.15s, transform 0.15s;
   }
-  .room-box:hover .img-upload-btn {
-    opacity: 1;
+  .room-action-btn:hover {
+    transform: scale(1.1);
   }
-  .img-upload-btn:hover {
+  .room-action-btn.img-upload-btn:hover {
     background: #2563eb;
+  }
+  .room-action-btn.img-revert-btn {
+    background: rgba(220, 38, 38, 0.65);
+  }
+  .room-action-btn.img-revert-btn:hover {
+    background: #dc2626;
   }
 
   .secret-number {
@@ -270,12 +286,27 @@
   }
 </style>
 
-<!-- Top Bar with same layout and style as other activity pages -->
 <div class="d-flex justify-content-between mb-2">
-  <div class="d-flex align-items-center me-3">
-    <strong class="text-primary fs-5 ps-2">GETTING AROUND</strong>
+  <div class="d-flex">
+    <div class="mx-2"><strong class="text-primary fs-5 ps-2">GETTING AROUND</strong></div>
+    <!-- Game Modes -->
+    <div class="btn-group me-2" role="group" aria-label="Game Modes">
+      <button id="modePractice" class="btn btn-sm btn-primary">
+        <i class="material-icons align-middle me-1" style="font-size:16px;">explore</i>Practice
+      </button>
+      <button id="modeSecret" class="btn btn-sm btn-outline-primary">
+        <i class="material-icons align-middle me-1" style="font-size:16px;">help_outline</i>Secret
+      </button>
+    </div>
+
+    <!-- Actions -->
+    <button id="resetBtn" class="btn btn-sm btn-outline-secondary">
+      <i class="material-icons me-1" style="font-size:16px;">restart_alt</i>
+      <span>Restart</span>
+    </button>
+
   </div>
-  <button id="home" class="btn btn-sm btn-outline-secondary p-0 me-2" onclick="location.href='/'" aria-label="Home">
+  <button id="home" class="btn btn-sm btn-outline-secondary p-0" onclick="location.href='/'" aria-label="Home">
     <i class="material-icons">home</i>
   </button>
 </div>
@@ -298,25 +329,6 @@
     <div id="speechTranscript" class="text-muted small fw-bold text-center px-1" style="min-height: 24px; font-size: 0.72rem; line-height: 1.2;">
       Voice ready
     </div>
-
-    <!-- Game Modes -->
-    <div class="btn-group-vertical w-100" role="group">
-      <button id="modePractice" class="btn btn-sm btn-primary text-start">
-        <i class="material-icons align-middle me-1" style="font-size:15px;">explore</i>Practice
-      </button>
-      <button id="modeTreasure" class="btn btn-sm btn-outline-primary text-start">
-        <i class="material-icons align-middle me-1" style="font-size:15px;">star</i>Treasure
-      </button>
-      <button id="modeSecret" class="btn btn-sm btn-outline-primary text-start">
-        <i class="material-icons align-middle me-1" style="font-size:15px;">help_outline</i>Secret
-      </button>
-    </div>
-
-    <!-- Actions -->
-    <button id="resetBtn" class="btn btn-sm btn-outline-secondary d-flex align-items-center justify-content-center">
-      <i class="material-icons me-1" style="font-size:15px;">restart_alt</i>
-      <span>Restart</span>
-    </button>
 
     <div id="unsupportedAlert" class="alert alert-warning text-center py-1 px-1 small mt-auto mb-0" style="font-size:0.7rem; display:none;">
       Speech recognition not supported.
@@ -360,33 +372,32 @@
      ========================================================================== */
   function svgIcon(name, color, bg) {
     const icons = {
-      school: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="12" fill="${bg}"/><path d="M50 18 L18 36 L82 36 Z" fill="${color}"/><rect x="26" y="36" width="48" height="42" fill="#fff"/><rect x="42" y="54" width="16" height="24" fill="${color}"/><circle cx="50" cy="28" r="4" fill="#facc15"/></svg>`,
-      park: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="12" fill="${bg}"/><circle cx="36" cy="42" r="20" fill="#22c55e"/><circle cx="64" cy="46" r="16" fill="#16a34a"/><rect x="33" y="56" width="6" height="22" fill="#78350f"/><rect x="61" y="58" width="6" height="20" fill="#78350f"/><rect x="22" y="75" width="56" height="6" rx="2" fill="#ca8a04"/></svg>`,
-      hospital: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="12" fill="${bg}"/><rect x="22" y="24" width="56" height="58" rx="4" fill="#fff"/><path d="M44 38 h12 v10 h10 v12 h-10 v10 h-12 v-10 h-10 v-12 h10 Z" fill="#ef4444"/></svg>`,
-      library: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="12" fill="${bg}"/><path d="M50 18 L15 32 L85 32 Z" fill="#e2e8f0"/><rect x="24" y="32" width="8" height="42" fill="#fff"/><rect x="40" y="32" width="8" height="42" fill="#fff"/><rect x="56" y="32" width="8" height="42" fill="#fff"/><rect x="72" y="32" width="8" height="42" fill="#fff"/><rect x="18" y="74" width="64" height="8" fill="#e2e8f0"/></svg>`,
-      supermarket: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="12" fill="${bg}"/><path d="M18 36 L82 36 L72 74 L28 74 Z" fill="#fff"/><circle cx="36" cy="80" r="5" fill="#334155"/><circle cx="64" cy="80" r="5" fill="#334155"/><rect x="36" y="46" width="28" height="18" fill="${color}"/></svg>`,
-      police: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="12" fill="${bg}"/><rect x="24" y="32" width="52" height="52" rx="4" fill="#1e3a8a"/><path d="M50 18 L70 32 L30 32 Z" fill="#3b82f6"/><path d="M50 42 L60 48 L56 60 L50 66 L44 60 L40 48 Z" fill="#facc15"/></svg>`,
-      fire: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="12" fill="${bg}"/><rect x="24" y="32" width="52" height="52" rx="4" fill="#dc2626"/><circle cx="50" cy="24" r="7" fill="#facc15"/><rect x="42" y="52" width="16" height="24" fill="#fef08a"/></svg>`,
-      bakery: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="12" fill="${bg}"/><path d="M26 44 Q50 20 74 44 L70 74 L30 74 Z" fill="#fde047"/><ellipse cx="50" cy="40" rx="18" ry="8" fill="#f59e0b"/><rect x="44" y="56" width="12" height="18" fill="#78350f"/></svg>`,
-      station: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="12" fill="${bg}"/><rect x="22" y="26" width="56" height="48" rx="8" fill="#0284c7"/><circle cx="34" cy="62" r="6" fill="#fff"/><circle cx="66" cy="62" r="6" fill="#fff"/><line x1="12" y1="80" x2="88" y2="80" stroke="#64748b" stroke-width="4"/></svg>`,
-      zoo: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="12" fill="${bg}"/><circle cx="50" cy="45" r="22" fill="#f59e0b"/><circle cx="34" cy="30" r="7" fill="#d97706"/><circle cx="66" cy="30" r="7" fill="#d97706"/><circle cx="44" cy="42" r="3" fill="#000"/><circle cx="56" cy="42" r="3" fill="#000"/></svg>`,
-      playground: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="12" fill="${bg}"/><path d="M22 75 L36 28 L44 28 L74 75" stroke="#ef4444" stroke-width="5" fill="none"/><line x1="30" y1="52" x2="62" y2="52" stroke="#facc15" stroke-width="4"/></svg>`,
-      museum: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="12" fill="${bg}"/><path d="M50 16 L20 32 L80 32 Z" fill="#a855f7"/><rect x="26" y="32" width="6" height="44" fill="#fff"/><rect x="42" y="32" width="6" height="44" fill="#fff"/><rect x="52" y="32" width="6" height="44" fill="#fff"/><rect x="68" y="32" width="6" height="44" fill="#fff"/><rect x="18" y="76" width="64" height="6" fill="#cbd5e1"/></svg>`,
-      treasure: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,8 62,36 93,37 68,57 77,88 50,70 23,88 32,57 7,37 38,36" fill="#facc15" stroke="#eab308" stroke-width="4" stroke-linejoin="round"/></svg>`
+      school: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><rect x="12" y="78" width="76" height="4" rx="2" fill="#94a3b8"/><rect x="22" y="42" width="56" height="36" rx="2" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/><rect x="40" y="24" width="20" height="20" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/><polygon points="50,11 36,25 64,25" fill="#dc2626"/><polygon points="19,43 50,30 81,43" fill="#ef4444"/><circle cx="50" cy="34" r="5" fill="#fef08a" stroke="#ca8a04" stroke-width="1"/><line x1="50" y1="34" x2="50" y2="31" stroke="#78350f" stroke-width="1" stroke-linecap="round"/><line x1="50" y1="34" x2="52.5" y2="34" stroke="#78350f" stroke-width="1" stroke-linecap="round"/><rect x="28" y="48" width="8" height="8" rx="1" fill="#93c5fd"/><rect x="64" y="48" width="8" height="8" rx="1" fill="#93c5fd"/><rect x="44" y="60" width="12" height="18" rx="1" fill="#2563eb"/><line x1="50" y1="60" x2="50" y2="78" stroke="#1d4ed8" stroke-width="1"/><circle cx="48" cy="69" r="0.8" fill="#facc15"/><circle cx="52" cy="69" r="0.8" fill="#facc15"/><line x1="50" y1="11" x2="50" y2="5" stroke="#64748b" stroke-width="1"/><path d="M50 5 L56 7.5 L50 10 Z" fill="#2563eb"/></svg>`,
+      park: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><circle cx="78" cy="22" r="8" fill="#fde047" opacity="0.85"/><path d="M0 72 Q35 64 65 73 T100 70 L100 100 L0 100 Z" fill="#86efac"/><path d="M0 78 Q40 70 80 80 L100 77 L100 100 L0 100 Z" fill="#4ade80"/><rect x="28" y="52" width="7" height="28" rx="2" fill="#78350f"/><circle cx="31.5" cy="38" r="17" fill="#22c55e"/><circle cx="22" cy="42" r="11" fill="#16a34a"/><circle cx="41" cy="40" r="12" fill="#15803d"/><rect x="68" y="56" width="5" height="22" rx="1.5" fill="#78350f"/><circle cx="70.5" cy="46" r="13" fill="#16a34a"/><circle cx="76" cy="49" r="9" fill="#15803d"/><path d="M42 74 L58 74" stroke="#b45309" stroke-width="3" stroke-linecap="round"/><path d="M43 70 L57 70" stroke="#d97706" stroke-width="2.5" stroke-linecap="round"/><line x1="44" y1="74" x2="44" y2="81" stroke="#475569" stroke-width="1.8"/><line x1="56" y1="74" x2="56" y2="81" stroke="#475569" stroke-width="1.8"/><circle cx="15" cy="85" r="2.5" fill="#f43f5e"/><circle cx="15" cy="85" r="1" fill="#fef08a"/><circle cx="86" cy="85" r="2.5" fill="#fbbf24"/><circle cx="86" cy="85" r="1" fill="#f43f5e"/></svg>`,
+      hospital: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><rect x="12" y="80" width="76" height="4" rx="2" fill="#cbd5e1"/><rect x="22" y="24" width="56" height="56" rx="4" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/><rect x="22" y="24" width="56" height="6" rx="2" fill="#ef4444"/><circle cx="50" cy="42" r="12" fill="#fee2e2"/><path d="M47 34 h6 v5 h5 v6 h-5 v5 h-6 v-5 h-5 v-6 h5 Z" fill="#dc2626"/><rect x="41" y="62" width="18" height="18" rx="2" fill="#93c5fd" stroke="#3b82f6" stroke-width="1"/><line x1="50" y1="62" x2="50" y2="80" stroke="#1d4ed8" stroke-width="1"/><rect x="27" y="38" width="8" height="9" rx="1" fill="#bfdbfe"/><rect x="65" y="38" width="8" height="9" rx="1" fill="#bfdbfe"/><rect x="27" y="52" width="8" height="9" rx="1" fill="#bfdbfe"/><rect x="65" y="52" width="8" height="9" rx="1" fill="#bfdbfe"/></svg>`,
+      library: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><rect x="16" y="14" width="68" height="28" rx="2" fill="#e0f2fe" opacity="0.6"/><line x1="16" y1="28" x2="84" y2="28" stroke="#0891b2" stroke-width="1.5" opacity="0.4"/><rect x="20" y="17" width="4" height="11" fill="#ef4444" opacity="0.7"/><rect x="25" y="16" width="5" height="12" fill="#3b82f6" opacity="0.7"/><rect x="31" y="18" width="4" height="10" fill="#10b981" opacity="0.7"/><rect x="36" y="16" width="5" height="12" fill="#f59e0b" opacity="0.7"/><rect x="42" y="17" width="4" height="11" fill="#8b5cf6" opacity="0.7"/><rect x="62" y="16" width="5" height="12" fill="#ec4899" opacity="0.7"/><rect x="68" y="18" width="4" height="10" fill="#0284c7" opacity="0.7"/><rect x="73" y="16" width="5" height="12" fill="#f97316" opacity="0.7"/><rect x="10" y="74" width="80" height="5" rx="1" fill="#78350f"/><rect x="14" y="79" width="72" height="4" fill="#92400e"/><rect x="16" y="68" width="28" height="6" rx="1" fill="#1e3a8a"/><rect x="42" y="69" width="2" height="4" fill="#f8fafc"/><rect x="18" y="62" width="24" height="6" rx="1" fill="#dc2626"/><line x1="20" y1="65" x2="38" y2="65" stroke="#fef08a" stroke-width="0.8"/><rect x="19" y="56" width="21" height="6" rx="1" fill="#15803d"/><line x1="22" y1="59" x2="36" y2="59" stroke="#fde047" stroke-width="0.8"/><path d="M 44 71 Q 62 67 84 71 L 84 57 Q 62 53 44 57 Z" fill="#0369a1"/><path d="M 44 69 Q 54 62 64 68 Q 74 62 84 69 L 84 55 Q 74 48 64 54 Q 54 48 44 55 Z" fill="#ffffff" stroke="#cbd5e1" stroke-width="0.8"/><path d="M 44 68 Q 54 61 64 67 Q 74 61 84 68 L 84 54 Q 74 47 64 53 Q 54 47 44 54 Z" fill="#fffbeb"/><line x1="64" y1="53" x2="64" y2="67" stroke="#94a3b8" stroke-width="1"/><line x1="48" y1="56" x2="60" y2="56" stroke="#94a3b8" stroke-width="0.9" stroke-linecap="round"/><line x1="48" y1="59" x2="60" y2="59" stroke="#94a3b8" stroke-width="0.9" stroke-linecap="round"/><line x1="48" y1="62" x2="57" y2="62" stroke="#94a3b8" stroke-width="0.9" stroke-linecap="round"/><line x1="68" y1="56" x2="80" y2="56" stroke="#94a3b8" stroke-width="0.9" stroke-linecap="round"/><line x1="68" y1="59" x2="80" y2="59" stroke="#94a3b8" stroke-width="0.9" stroke-linecap="round"/><line x1="68" y1="62" x2="77" y2="62" stroke="#94a3b8" stroke-width="0.9" stroke-linecap="round"/><path d="M 64 67 Q 66 73 62 76 L 65 74 L 68 76 Q 65 72 64 67" fill="#ef4444"/><rect x="74" y="50" width="8" height="2.5" rx="1" fill="#d97706"/><path d="M 78 50 L 78 36 Q 78 32 72 32 L 67 32" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round"/><path d="M 59 32 Q 66 27 73 32 L 72 36 Q 66 33 60 36 Z" fill="#15803d" stroke="#166534" stroke-width="0.8"/><polygon points="60,36 72,36 82,54 50,54" fill="#fef08a" opacity="0.25"/></svg>`,
+      supermarket: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><rect x="10" y="80" width="80" height="4" rx="2" fill="#94a3b8"/><rect x="16" y="24" width="68" height="56" rx="3" fill="#ffffff" stroke="#fed7aa" stroke-width="1.5"/><path d="M14 24 L86 24 L82 38 L18 38 Z" fill="#ea580c"/><polygon points="23,24 29,24 27,38 21,38" fill="#ffffff"/><polygon points="36,24 42,24 40,38 34,38" fill="#ffffff"/><polygon points="49,24 55,24 53,38 47,38" fill="#ffffff"/><polygon points="62,24 68,24 66,38 60,38" fill="#ffffff"/><polygon points="75,24 81,24 79,38 73,38" fill="#ffffff"/><path d="M18 38 Q22 41 26 38 Q30 41 34 38 Q38 41 42 38 Q46 41 50 38 Q54 41 58 38 Q62 41 66 38 Q70 41 74 38 Q78 41 82 38" fill="#ea580c"/><rect x="22" y="46" width="22" height="28" rx="2" fill="#e0f2fe" stroke="#93c5fd" stroke-width="1"/><line x1="22" y1="58" x2="44" y2="58" stroke="#93c5fd" stroke-width="1"/><path d="M50 50 L54 50 L61 64 L76 64 L80 53 L58 53" fill="none" stroke="#0284c7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="63" cy="70" r="3" fill="#334155"/><circle cx="74" cy="70" r="3" fill="#334155"/><circle cx="64" cy="51" r="3.5" fill="#ef4444"/><path d="M69 47 L74 53" stroke="#f97316" stroke-width="3" stroke-linecap="round"/><path d="M73 45 L77 53" stroke="#84cc16" stroke-width="2.5" stroke-linecap="round"/></svg>`,
+      police: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><rect x="12" y="80" width="76" height="4" rx="2" fill="#94a3b8"/><rect x="20" y="28" width="60" height="52" rx="3" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/><rect x="18" y="24" width="64" height="7" rx="2" fill="#1e40af"/><circle cx="50" cy="18" r="5" fill="#ef4444"/><rect x="47" y="21" width="6" height="3" fill="#64748b"/><line x1="50" y1="10" x2="50" y2="12" stroke="#f87171" stroke-width="1.5" stroke-linecap="round"/><line x1="43" y1="13" x2="45" y2="15" stroke="#f87171" stroke-width="1.5" stroke-linecap="round"/><line x1="57" y1="13" x2="55" y2="15" stroke="#f87171" stroke-width="1.5" stroke-linecap="round"/><path d="M50 35 L57 40 L55 49 L50 53 L45 49 L43 40 Z" fill="#facc15" stroke="#ca8a04" stroke-width="1"/><circle cx="50" cy="43" r="2.5" fill="#ca8a04"/><rect x="42" y="60" width="16" height="20" rx="1" fill="#3b82f6"/><line x1="50" y1="60" x2="50" y2="80" stroke="#1d4ed8" stroke-width="1"/><rect x="25" y="40" width="10" height="12" rx="1" fill="#bfdbfe"/><rect x="65" y="40" width="10" height="12" rx="1" fill="#bfdbfe"/><rect x="25" y="58" width="10" height="12" rx="1" fill="#bfdbfe"/><rect x="65" y="58" width="10" height="12" rx="1" fill="#bfdbfe"/></svg>`,
+      fire: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><rect x="10" y="80" width="80" height="4" rx="2" fill="#94a3b8"/><rect x="18" y="24" width="64" height="56" rx="3" fill="#dc2626"/><rect x="16" y="20" width="68" height="6" rx="2" fill="#991b1b"/><circle cx="50" cy="14" r="5" fill="#facc15" stroke="#ca8a04" stroke-width="1"/><rect x="48" y="18" width="4" height="3" fill="#64748b"/><circle cx="50" cy="33" r="6" fill="#fef08a"/><path d="M50 29 Q52.5 32 50 36 Q47.5 32 50 29" fill="#ea580c"/><rect x="24" y="44" width="22" height="36" rx="2" fill="#ffffff" stroke="#991b1b" stroke-width="1.5"/><line x1="24" y1="53" x2="46" y2="53" stroke="#fca5a5" stroke-width="1.5"/><line x1="24" y1="62" x2="46" y2="62" stroke="#fca5a5" stroke-width="1.5"/><line x1="24" y1="71" x2="46" y2="71" stroke="#fca5a5" stroke-width="1.5"/><rect x="54" y="44" width="22" height="36" rx="2" fill="#ffffff" stroke="#991b1b" stroke-width="1.5"/><line x1="54" y1="53" x2="76" y2="53" stroke="#fca5a5" stroke-width="1.5"/><line x1="54" y1="62" x2="76" y2="62" stroke="#fca5a5" stroke-width="1.5"/><line x1="54" y1="71" x2="76" y2="71" stroke="#fca5a5" stroke-width="1.5"/></svg>`,
+      bakery: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><rect x="10" y="80" width="80" height="4" rx="2" fill="#94a3b8"/><rect x="18" y="24" width="64" height="56" rx="3" fill="#fffbeb" stroke="#fde68a" stroke-width="1.5"/><path d="M16 26 L84 26 L80 40 L20 40 Z" fill="#d97706"/><polygon points="25,26 31,26 29,40 23,40" fill="#fef3c7"/><polygon points="38,26 44,26 42,40 36,40" fill="#fef3c7"/><polygon points="51,26 57,26 55,40 49,40" fill="#fef3c7"/><polygon points="64,26 70,26 68,40 62,40" fill="#fef3c7"/><polygon points="77,26 83,26 81,40 75,40" fill="#fef3c7"/><path d="M20 40 Q24 43 28 40 Q32 43 36 40 Q40 43 44 40 Q48 43 52 40 Q56 43 60 40 Q64 43 68 40 Q72 43 76 40 Q80 43 84 40" fill="#d97706"/><rect x="23" y="47" width="33" height="27" rx="3" fill="#ffffff" stroke="#fcd34d" stroke-width="1.2"/><path d="M27 61 C28 54, 43 54, 45 61 C41 59, 31 59, 27 61 Z" fill="#f59e0b" stroke="#b45309" stroke-width="0.8"/><ellipse cx="43" cy="65" rx="9" ry="4.5" fill="#d97706"/><line x1="39" y1="63" x2="41" y2="67" stroke="#fffbeb" stroke-width="1"/><line x1="43" y1="63" x2="45" y2="67" stroke="#fffbeb" stroke-width="1"/><rect x="61" y="47" width="16" height="33" rx="1" fill="#78350f"/><rect x="64" y="50" width="10" height="12" rx="1" fill="#e0f2fe"/><circle cx="64" cy="67" r="1.2" fill="#facc15"/></svg>`,
+      station: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><polygon points="50,6 14,18 86,18" fill="#0284c7"/><rect x="12" y="17" width="76" height="3" rx="1" fill="#0369a1"/><rect x="42" y="9" width="16" height="11" rx="1.5" fill="#0369a1"/><circle cx="50" cy="14.5" r="4" fill="#ffffff" stroke="#0284c7" stroke-width="0.8"/><line x1="50" y1="14.5" x2="50" y2="12" stroke="#1e293b" stroke-width="0.9" stroke-linecap="round"/><line x1="50" y1="14.5" x2="52.2" y2="15" stroke="#1e293b" stroke-width="0.9" stroke-linecap="round"/><rect x="25" y="21" width="50" height="7.5" rx="2" fill="#0f172a"/><text x="50" y="26.6" font-family="sans-serif" font-weight="900" font-size="4.8" fill="#facc15" text-anchor="middle" letter-spacing="1.2">STATION</text><rect x="15" y="20" width="3" height="58" fill="#94a3b8" rx="1"/><rect x="82" y="20" width="3" height="58" fill="#94a3b8" rx="1"/><rect x="8" y="58" width="16" height="24" rx="2" fill="#cbd5e1"/><line x1="22" y1="58" x2="22" y2="82" stroke="#facc15" stroke-width="1.5" stroke-dasharray="2 1.5"/><line x1="12" y1="46" x2="12" y2="58" stroke="#64748b" stroke-width="1.2"/><rect x="9" y="44" width="6" height="4" rx="1" fill="#ffffff" stroke="#0284c7" stroke-width="0.7"/><rect x="10" y="45.5" width="4" height="1" fill="#0284c7"/><rect x="6" y="83" width="88" height="8" rx="2" fill="#e2e8f0"/><rect x="12" y="85" width="76" height="3" fill="#78350f" rx="0.5"/><line x1="20" y1="84" x2="20" y2="89" stroke="#92400e" stroke-width="2.5"/><line x1="32" y1="84" x2="32" y2="89" stroke="#92400e" stroke-width="2.5"/><line x1="44" y1="84" x2="44" y2="89" stroke="#92400e" stroke-width="2.5"/><line x1="56" y1="84" x2="56" y2="89" stroke="#92400e" stroke-width="2.5"/><line x1="68" y1="84" x2="68" y2="89" stroke="#92400e" stroke-width="2.5"/><line x1="80" y1="84" x2="80" y2="89" stroke="#92400e" stroke-width="2.5"/><line x1="8" y1="84" x2="92" y2="84" stroke="#475569" stroke-width="2" stroke-linecap="round"/><line x1="8" y1="87.5" x2="92" y2="87.5" stroke="#334155" stroke-width="1.5" stroke-linecap="round"/><path d="M44 33 L50 29 L56 33 L50 35 Z" fill="none" stroke="#64748b" stroke-width="1.5" stroke-linejoin="round"/><line x1="46" y1="29" x2="54" y2="29" stroke="#334155" stroke-width="2" stroke-linecap="round"/><rect x="30" y="78" width="10" height="6" rx="1.5" fill="#334155"/><rect x="60" y="78" width="10" height="6" rx="1.5" fill="#334155"/><circle cx="34" cy="82" r="3" fill="#1e293b"/><circle cx="66" cy="82" r="3" fill="#1e293b"/><rect x="44" y="80" width="12" height="3" rx="1" fill="#475569"/><rect x="25" y="34" width="50" height="46" rx="8" fill="#ffffff" stroke="#0284c7" stroke-width="2"/><path d="M25 42 Q50 33 75 42" fill="#0284c7"/><rect x="25.5" y="41" width="49" height="2" fill="#0369a1"/><rect x="40" y="38" width="20" height="4" rx="1" fill="#0f172a"/><rect x="42" y="39.2" width="16" height="1.6" rx="0.5" fill="#22c55e"/><rect x="29" y="45" width="42" height="17" rx="4" fill="#0f172a"/><path d="M31 47 L43 47 L35 60 L31 60 Z" fill="#38bdf8" opacity="0.35"/><path d="M46 47 L51 47 L41 60 L37 60 Z" fill="#38bdf8" opacity="0.2"/><line x1="50" y1="46" x2="50" y2="61" stroke="#334155" stroke-width="1"/><rect x="25.5" y="64" width="49" height="4.5" fill="#0284c7"/><rect x="25.5" y="68.5" width="49" height="1.5" fill="#38bdf8"/><circle cx="34" cy="73.5" r="3.8" fill="#fef08a" stroke="#ca8a04" stroke-width="1"/><circle cx="33" cy="72.5" r="1.3" fill="#ffffff"/><circle cx="66" cy="73.5" r="3.8" fill="#fef08a" stroke="#ca8a04" stroke-width="1"/><circle cx="65" cy="72.5" r="1.3" fill="#ffffff"/><rect x="31.5" y="65" width="3.5" height="1.8" rx="0.8" fill="#ef4444"/><rect x="65" y="65" width="3.5" height="1.8" rx="0.8" fill="#ef4444"/><polygon points="50,71 47,74.5 53,74.5" fill="#0284c7"/></svg>`,
+      zoo: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><rect x="12" y="80" width="76" height="4" rx="2" fill="#ca8a04"/><rect x="16" y="28" width="8" height="52" rx="2" fill="#78350f"/><rect x="76" y="28" width="8" height="52" rx="2" fill="#78350f"/><path d="M14 28 Q50 16 86 28 L86 36 Q50 24 14 36 Z" fill="#92400e"/><text x="50" y="29" font-family="sans-serif" font-weight="900" font-size="9" fill="#fef08a" text-anchor="middle">ZOO</text><circle cx="50" cy="56" r="18" fill="#d97706"/><circle cx="38" cy="43" r="5" fill="#b45309"/><circle cx="62" cy="43" r="5" fill="#b45309"/><circle cx="50" cy="57" r="13" fill="#fde047"/><ellipse cx="45" cy="54" rx="1.8" ry="2.2" fill="#1e293b"/><ellipse cx="55" cy="54" rx="1.8" ry="2.2" fill="#1e293b"/><circle cx="45.5" cy="53" r="0.6" fill="#ffffff"/><circle cx="55.5" cy="53" r="0.6" fill="#ffffff"/><polygon points="50,58 48,60 52,60" fill="#b45309"/><path d="M48 61 Q50 63 52 61" fill="none" stroke="#78350f" stroke-width="1" stroke-linecap="round"/><circle cx="43" cy="58" r="2" fill="#fca5a5" opacity="0.6"/><circle cx="57" cy="58" r="2" fill="#fca5a5" opacity="0.6"/><path d="M10 68 Q22 58 24 71 Q17 75 10 68 Z" fill="#22c55e"/><path d="M90 68 Q78 58 76 71 Q83 75 90 68 Z" fill="#16a34a"/></svg>`,
+      playground: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><path d="M0 76 Q50 71 100 76 L100 100 L0 100 Z" fill="#86efac"/><line x1="8" y1="28" x2="52" y2="28" stroke="#1d4ed8" stroke-width="3.5" stroke-linecap="round"/><line x1="8" y1="76" x2="14" y2="28" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/><line x1="20" y1="76" x2="14" y2="28" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/><line x1="10" y1="60" x2="18" y2="60" stroke="#3b82f6" stroke-width="2"/><line x1="40" y1="76" x2="46" y2="28" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/><line x1="52" y1="76" x2="46" y2="28" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/><line x1="42" y1="60" x2="50" y2="60" stroke="#3b82f6" stroke-width="2"/><line x1="25" y1="29" x2="25" y2="58" stroke="#64748b" stroke-width="1.2"/><line x1="35" y1="29" x2="35" y2="58" stroke="#64748b" stroke-width="1.2"/><rect x="22" y="58" width="16" height="3.5" rx="1.5" fill="#dc2626"/><line x1="62" y1="76" x2="66" y2="36" stroke="#eab308" stroke-width="2.5"/><line x1="62.5" y1="66" x2="66.5" y2="66" stroke="#ca8a04" stroke-width="1.5"/><line x1="63.5" y1="56" x2="67.5" y2="56" stroke="#ca8a04" stroke-width="1.5"/><line x1="64.5" y1="46" x2="68.5" y2="46" stroke="#ca8a04" stroke-width="1.5"/><circle cx="66" cy="36" r="3" fill="#eab308"/><path d="M66 38 Q78 44 92 74" fill="none" stroke="#ef4444" stroke-width="4.5" stroke-linecap="round"/><path d="M66 40 Q78 46 92 76" fill="none" stroke="#facc15" stroke-width="3" stroke-linecap="round"/></svg>`,
+      museum: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><polygon points="50,15 16,32 84,32" fill="#9333ea"/><circle cx="50" cy="24" r="4.5" fill="#f3e8ff" stroke="#7e22ce" stroke-width="1"/><rect x="18" y="32" width="64" height="4" fill="#7e22ce"/><rect x="22" y="36" width="8" height="37" rx="1" fill="#ffffff" stroke="#e9d5ff" stroke-width="1"/><rect x="38" y="36" width="8" height="37" rx="1" fill="#ffffff" stroke="#e9d5ff" stroke-width="1"/><rect x="54" y="36" width="8" height="37" rx="1" fill="#ffffff" stroke="#e9d5ff" stroke-width="1"/><rect x="70" y="36" width="8" height="37" rx="1" fill="#ffffff" stroke="#e9d5ff" stroke-width="1"/><path d="M47 48 Q45 44 50 44 Q55 44 53 48 Q56 55 52 64 L48 64 Q44 55 47 48 Z" fill="#d97706"/><rect x="16" y="73" width="68" height="3.5" fill="#7e22ce"/><rect x="12" y="76.5" width="76" height="3.5" fill="#a855f7"/><rect x="8" y="80" width="84" height="4" rx="2" fill="#cbd5e1"/></svg>`
     };
     return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(icons[name] || icons.school);
   }
 
   const DEFAULT_PLACES = [
-    { id: 0, name: "School", image: svgIcon("school", "#2563eb", "#dbeafe") },
-    { id: 1, name: "Park", image: svgIcon("park", "#16a34a", "#dcfce7") },
-    { id: 2, name: "Hospital", image: svgIcon("hospital", "#dc2626", "#fee2e2") },
-    { id: 3, name: "Library", image: svgIcon("library", "#0891b2", "#cffafe") },
-    { id: 4, name: "Supermarket", image: svgIcon("supermarket", "#ea580c", "#ffedd5") },
-    { id: 5, name: "Police Station", image: svgIcon("police", "#1d4ed8", "#dbeafe") },
-    { id: 6, name: "Fire Station", image: svgIcon("fire", "#e11d48", "#ffe4e6") },
-    { id: 7, name: "Bakery", image: svgIcon("bakery", "#d97706", "#fef3c7") },
-    { id: 8, name: "Station", image: svgIcon("station", "#0284c7", "#e0f2fe") },
+    { id: 0, name: "School", image: svgIcon("school", "#2563eb", "#eff6ff") },
+    { id: 1, name: "Park", image: svgIcon("park", "#16a34a", "#f0fdf4") },
+    { id: 2, name: "Hospital", image: svgIcon("hospital", "#dc2626", "#fef2f2") },
+    { id: 3, name: "Library", image: svgIcon("library", "#0891b2", "#ecfeff") },
+    { id: 4, name: "Supermarket", image: svgIcon("supermarket", "#ea580c", "#fff7ed") },
+    { id: 5, name: "Police Station", image: svgIcon("police", "#1d4ed8", "#eff6ff") },
+    { id: 6, name: "Fire Station", image: svgIcon("fire", "#e11d48", "#fff1f2") },
+    { id: 7, name: "Bakery", image: svgIcon("bakery", "#d97706", "#fefce8") },
+    { id: 8, name: "Station", image: svgIcon("station", "#0284c7", "#f0f9ff") },
     { id: 9, name: "Zoo", image: svgIcon("zoo", "#ca8a04", "#fef9c3") },
     { id: 10, name: "Playground", image: svgIcon("playground", "#7c3aed", "#ede9fe") },
     { id: 11, name: "Museum", image: svgIcon("museum", "#9333ea", "#f3e8ff") }
@@ -500,6 +511,22 @@
         } catch(e) {}
       }
       return list;
+    },
+
+    async clearAll() {
+      if (this.db) {
+        return new Promise((resolve) => {
+          try {
+            const tx = this.db.transaction(STORE_PLACES, "readwrite");
+            tx.objectStore(STORE_PLACES).clear();
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => resolve();
+          } catch(e) { resolve(); }
+        });
+      }
+      for (let i = 0; i < 12; i++) {
+        try { localStorage.removeItem("map_place_" + i); } catch(e) {}
+      }
     }
   };
 
@@ -539,11 +566,11 @@
      3. GAME STATE & 7x6 GRID NAVIGATION
      ========================================================================== */
   let places = JSON.parse(JSON.stringify(DEFAULT_PLACES));
-  let currentMode = "practice"; // 'practice' | 'treasure' | 'secret'
-  let treasureIndex = -1;
+  let currentMode = "practice"; // 'practice' | 'secret'
   let revealedSecrets = new Set();
+  let secretOrder = null;
 
-  // Mover position (38 = starting space under reset button on left)
+  // Mover position (38 = starting space under controls on left, aligned one street up)
   let moverPosition = 38;
   let moverAngle = 90; // Cumulative angle in degrees (0 = north, 90 = east, 180 = south, 270 = west)
 
@@ -557,10 +584,18 @@
   }
 
   // Entry door cells on the streets
-  const entryObj = {
+  // Moving North: enters room above
+  const entryNorthObj = {
     0: 0,  2: 1,  4: 2,  6: 3,
     14: 4, 16: 5, 18: 6, 20: 7,
     28: 8, 30: 9, 32: 10, 34: 11
+  };
+  const entryObj = entryNorthObj;
+
+  // Moving South: enters room below
+  const entrySouthObj = {
+    0: 4,  2: 5,  4: 6,  6: 7,
+    14: 8, 16: 9, 18: 10, 20: 11
   };
 
   // Navigable cells
@@ -573,15 +608,6 @@
     38
   ]);
 
-  function speak(text) {
-    if (!window.speechSynthesis) return;
-    try {
-      window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = "en-US";
-      window.speechSynthesis.speak(u);
-    } catch(e) {}
-  }
 
   /* ==========================================================================
      4. BOARD RENDERING & POSITIONING (Direct Editing & Drag-and-Drop)
@@ -594,11 +620,14 @@
 
   function renderRooms() {
     roomsGridEl.innerHTML = "";
-    places.forEach((place, index) => {
+    for (let index = 0; index < 12; index++) {
+      const placeIndex = (currentMode === "secret" && secretOrder) ? secretOrder[index] : index;
+      const place = places[placeIndex];
       const box = document.createElement("div");
       box.className = "room-box";
       box.id = `room_${index}`;
       box.dataset.index = index;
+      box.dataset.placeIndex = placeIndex;
 
       let front = "";
       let back = "";
@@ -607,29 +636,12 @@
         const isRev = revealedSecrets.has(index);
         front = `
           <div class="secret-number">${index + 1}</div>
-          <div class="room-label" data-index="${index}">${place.name}</div>
         `;
         back = `
           <img src="${place.image}" alt="${place.name}" class="room-img" data-index="${index}">
-          <div class="room-label" contenteditable="true" spellcheck="false" data-index="${index}">${place.name}</div>
+          <div class="room-label" data-index="${index}">${place.name}</div>
         `;
         if (isRev) box.classList.add("is-flipped");
-      } else if (currentMode === "treasure") {
-        front = `
-          <div class="fs-1">❓</div>
-          <div class="room-label">?</div>
-        `;
-        if (index === treasureIndex) {
-          back = `
-            <img src="${svgIcon('treasure')}" alt="Gold Star" style="max-height: 60%; max-width: 60%; object-fit: contain;">
-            <div class="room-label text-warning fw-bold">Star!</div>
-          `;
-        } else {
-          back = `
-            <img src="${place.image}" alt="${place.name}" class="room-img" data-index="${index}">
-            <div class="room-label" data-index="${index}">${place.name}</div>
-          `;
-        }
       } else {
         // Practice Mode: Editable text & direct image change
         front = `
@@ -639,18 +651,28 @@
         back = front;
       }
 
+      const isCustom = hasCustomImage(placeIndex) || (places[placeIndex].name !== DEFAULT_PLACES[placeIndex].name);
       box.innerHTML = `
         <input type="file" class="room-file-input" data-index="${index}" accept="image/*" style="display:none;">
-        <button class="img-upload-btn" data-index="${index}" title="Change picture">
-          <i class="material-icons" style="font-size:15px;line-height:24px;">photo_camera</i>
-        </button>
+        ${currentMode === "practice" ? `
+        <div class="room-actions">
+          <button class="room-action-btn img-upload-btn" data-index="${index}" title="Change picture">
+            <i class="material-icons" style="font-size:15px;line-height:24px;">photo_camera</i>
+          </button>
+          ${isCustom ? `
+          <button class="room-action-btn img-revert-btn" data-index="${index}" title="Revert to default image and text">
+            <i class="material-icons" style="font-size:15px;line-height:24px;">restart_alt</i>
+          </button>
+          ` : ''}
+        </div>
+        ` : ''}
         <div class="room-inner">
           <div class="room-front">${front}</div>
           <div class="room-back">${back}</div>
         </div>
       `;
 
-      // 1. Drag and Drop on card
+      // 1. Drag and Drop on card (Practice mode only)
       box.addEventListener("dragover", (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -667,35 +689,51 @@
         e.preventDefault();
         e.stopPropagation();
         box.classList.remove("drag-over");
+        if (currentMode !== "practice") return;
         const file = e.dataTransfer.files[0];
         if (file && file.type.startsWith("image/")) {
-          await updateRoomImage(index, file);
+          await updateRoomImage(placeIndex, file);
         }
       });
 
       // 2. Hidden file input handler
       const fileInput = box.querySelector(".room-file-input");
-      fileInput.addEventListener("change", async (e) => {
-        const file = e.target.files[0];
-        if (file) {
-          await updateRoomImage(index, file);
-        }
-      });
+      if (fileInput) {
+        fileInput.addEventListener("change", async (e) => {
+          const file = e.target.files[0];
+          if (file) {
+            await updateRoomImage(placeIndex, file);
+          }
+        });
+      }
 
       // 3. Click camera button to change image
       const uploadBtn = box.querySelector(".img-upload-btn");
-      uploadBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        fileInput.click();
-      });
-
-      // 4. Click image directly to change image
-      const imgEl = box.querySelector(".room-img");
-      if (imgEl) {
-        imgEl.addEventListener("click", (e) => {
+      if (uploadBtn && fileInput) {
+        uploadBtn.addEventListener("click", (e) => {
           e.stopPropagation();
           fileInput.click();
         });
+      }
+
+      // 3b. Click revert button to restore default image
+      const revertBtn = box.querySelector(".img-revert-btn");
+      if (revertBtn) {
+        revertBtn.addEventListener("click", async (e) => {
+          e.stopPropagation();
+          await revertRoomImage(placeIndex);
+        });
+      }
+
+      // 4. Click image directly to change image (Practice mode only)
+      if (currentMode === "practice") {
+        const imgEl = box.querySelector(".room-img");
+        if (imgEl && fileInput) {
+          imgEl.addEventListener("click", (e) => {
+            e.stopPropagation();
+            fileInput.click();
+          });
+        }
       }
 
       // 5. ContentEditable label handlers
@@ -709,10 +747,10 @@
           }
         });
         labelEl.addEventListener("blur", async () => {
-          const newName = labelEl.innerText.trim() || DEFAULT_PLACES[index].name;
+          const newName = labelEl.innerText.trim() || DEFAULT_PLACES[placeIndex].name;
           labelEl.innerText = newName;
-          places[index].name = newName;
-          await MapStorage.savePlace(places[index]);
+          places[placeIndex].name = newName;
+          await MapStorage.savePlace(places[placeIndex]);
         });
       });
 
@@ -720,18 +758,40 @@
       box.addEventListener("click", () => enterRoom(index));
 
       roomsGridEl.appendChild(box);
-    });
+    }
+  }
+
+  function hasCustomImage(index) {
+    const place = places[index];
+    if (!place) return false;
+    if (place.hasCustomImage === true) return true;
+    if (place.hasCustomImage === false) return false;
+    return typeof place.image === "string" && !place.image.startsWith("data:image/svg+xml");
   }
 
   async function updateRoomImage(index, file) {
     try {
       const compressed = await compressImage(file);
       places[index].image = compressed;
+      places[index].hasCustomImage = true;
       await MapStorage.savePlace(places[index]);
-      const img = document.querySelector(`#room_${index} .room-img`);
-      if (img) img.src = compressed;
+      renderRooms();
+      updateMoverVisual();
     } catch(err) {
       console.error("Image update failed:", err);
+    }
+  }
+
+  async function revertRoomImage(index) {
+    try {
+      places[index].image = DEFAULT_PLACES[index].image;
+      places[index].name = DEFAULT_PLACES[index].name;
+      places[index].hasCustomImage = false;
+      await MapStorage.savePlace(places[index]);
+      renderRooms();
+      updateMoverVisual();
+    } catch(err) {
+      console.error("Image revert failed:", err);
     }
   }
 
@@ -814,7 +874,7 @@
       const sideControls = document.querySelector(".side-controls");
       const sideRect = sideControls ? sideControls.getBoundingClientRect() : { left: 0, width: 105 };
       colX = (sideRect.left - layoutRect.left) + sideRect.width / 2;
-      rowY = bottomStreetY;
+      rowY = streetH2;
     } else {
       const col = moverPosition % 7;
       const row = Math.floor(moverPosition / 7);
@@ -862,7 +922,7 @@
     const moverDir = getMoverDir();
     if (moverPosition === 38 || moverPosition === "start") {
       if (moverDir === "east") {
-        moverPosition = 28;
+        moverPosition = 14;
         stepWalk();
         updateMoverVisual();
       }
@@ -870,8 +930,8 @@
     }
 
     if (moverDir === "north") {
-      if (entryObj[moverPosition] !== undefined) {
-        enterRoom(entryObj[moverPosition]);
+      if (entryNorthObj[moverPosition] !== undefined) {
+        enterRoom(entryNorthObj[moverPosition]);
         return;
       }
       if (moverPosition - 14 >= 0 && canMoveCells.has(moverPosition - 14)) {
@@ -881,7 +941,11 @@
         return;
       }
     } else if (moverDir === "south") {
-      if (moverPosition + 14 < 35 && canMoveCells.has(moverPosition + 14) && entryObj[moverPosition] === undefined) {
+      if (entrySouthObj[moverPosition] !== undefined) {
+        enterRoom(entrySouthObj[moverPosition]);
+        return;
+      }
+      if (moverPosition + 14 < 35 && canMoveCells.has(moverPosition + 14) && entrySouthObj[moverPosition] === undefined) {
         moverPosition += 14;
         stepWalk();
         updateMoverVisual();
@@ -895,7 +959,7 @@
         return;
       }
     } else if (moverDir === "west") {
-      if (moverPosition === 28) {
+      if (moverPosition === 14) {
         moverPosition = 38;
         stepWalk();
         updateMoverVisual();
@@ -926,9 +990,6 @@
     if (currentMode === "secret") {
       revealedSecrets.clear();
       renderRooms();
-    } else if (currentMode === "treasure") {
-      treasureIndex = Math.floor(Math.random() * 12);
-      renderRooms();
     }
   }
 
@@ -939,35 +1000,24 @@
 
     if (currentMode === "practice") {
       box.classList.add("highlight");
-      speak(place.name);
       setTimeout(() => box.classList.remove("highlight"), 1800);
-    } else if (currentMode === "treasure") {
-      box.classList.add("is-flipped");
-      if (index === treasureIndex) {
-        speak(`You found the star at the ${place.name}!`);
-      } else {
-        speak(place.name);
-        setTimeout(() => box.classList.remove("is-flipped"), 2200);
-      }
     } else if (currentMode === "secret") {
       box.classList.add("is-flipped");
       revealedSecrets.add(index);
-      speak(`Number ${index + 1} is the ${place.name}!`);
     }
   }
 
   function setMode(mode) {
     currentMode = mode;
-    $("#modePractice, #modeTreasure, #modeSecret").removeClass("btn-primary").addClass("btn-outline-primary");
-    if (mode === "practice") $("#modePractice").removeClass("btn-outline-primary").addClass("btn-primary");
-    if (mode === "treasure") {
-      $("#modeTreasure").removeClass("btn-outline-primary").addClass("btn-primary");
-      treasureIndex = Math.floor(Math.random() * 12);
+    $("#modePractice, #modeSecret").removeClass("btn-primary").addClass("btn-outline-primary");
+    if (mode === "practice") {
+      $("#modePractice").removeClass("btn-outline-primary").addClass("btn-primary");
+      secretOrder = null;
     }
     if (mode === "secret") {
       $("#modeSecret").removeClass("btn-outline-primary").addClass("btn-primary");
       revealedSecrets.clear();
-      places.sort(() => 0.5 - Math.random());
+      secretOrder = [0,1,2,3,4,5,6,7,8,9,10,11].sort(() => 0.5 - Math.random());
     }
     renderRooms();
     reset();
@@ -987,10 +1037,11 @@
   const recognition = SpeechRecognition ? new SpeechRecognition() : null;
   const vocab = [
     "turn left", "left", "turn right", "right",
+    "on your right", "on the right", "on your left", "on the left",
     "go straight", "straight", "forward",
     "go straight two blocks", "straight two blocks", "two blocks",
     "go straight three blocks", "three blocks",
-    "restart", "reset", "practice", "treasure", "secret"
+    "restart", "reset", "practice", "secret"
   ];
 
   if (recognition) {
@@ -1017,10 +1068,11 @@
     { regex: /\b(go straight (three|3) blocks|(three|3) blocks)\b/i, action: () => { goStraight(); setTimeout(goStraight, 370); setTimeout(goStraight, 740); } },
     { regex: /\b(go straight (two|2) blocks|(two|2) blocks|straight two)\b/i, action: () => { goStraight(); setTimeout(goStraight, 370); } },
     { regex: /\b(go straight|straight|strait|forward|ahead)\b/i, action: () => goStraight() },
+    { regex: /\b(on (your|the) right|to (your|the) right|it'?s on (your|the) right)\b/i, action: () => { turnRight(); setTimeout(goStraight, 220); } },
+    { regex: /\b(on (your|the) left|to (your|the) left|it'?s on (your|the) left)\b/i, action: () => { turnLeft(); setTimeout(goStraight, 220); } },
     { regex: /\b(turn left|left)\b/i, action: () => turnLeft() },
     { regex: /\b(turn right|right|write)\b/i, action: () => turnRight() },
     { regex: /\b(practice)\b/i, action: () => setMode('practice') },
-    { regex: /\b(treasure)\b/i, action: () => setMode('treasure') },
     { regex: /\b(secret)\b/i, action: () => setMode('secret') }
   ];
 
@@ -1098,11 +1150,43 @@
     await MapStorage.init();
     const saved = await MapStorage.getAllPlaces();
     if (saved && saved.length > 0) {
-      saved.forEach(item => {
-        if (typeof item.id === "number" && item.id < 12) {
-          places[item.id] = { ...places[item.id], ...item };
-        }
+      const defaultNames = new Set(DEFAULT_PLACES.map(p => p.name));
+      // Detect if storage has scrambled default places from previous shuffle
+      const isCorrupted = saved.some(item => {
+        if (typeof item.id !== "number" || item.id >= 12) return false;
+        const isCustom = item.hasCustomImage === true || (item.hasCustomImage !== false && typeof item.image === "string" && !item.image.startsWith("data:image/svg+xml"));
+        return !isCustom && defaultNames.has(item.name) && item.name !== DEFAULT_PLACES[item.id].name;
       });
+
+      if (isCorrupted) {
+        console.warn("Detected scrambled default places from previous shuffle; resetting storage to matching defaults.");
+        await MapStorage.clearAll();
+        // Restore custom ones if any existed
+        for (const item of saved) {
+          const isCustom = item.hasCustomImage === true || (item.hasCustomImage !== false && typeof item.image === "string" && !item.image.startsWith("data:image/svg+xml"));
+          if (isCustom && typeof item.id === "number" && item.id < 12) {
+            places[item.id] = {
+              ...places[item.id],
+              name: item.name || places[item.id].name,
+              image: item.image,
+              hasCustomImage: true
+            };
+            await MapStorage.savePlace(places[item.id]);
+          }
+        }
+      } else {
+        saved.forEach(item => {
+          if (typeof item.id === "number" && item.id < 12) {
+            const isCustom = item.hasCustomImage === true || (item.hasCustomImage !== false && typeof item.image === "string" && !item.image.startsWith("data:image/svg+xml"));
+            places[item.id] = {
+              ...places[item.id],
+              name: item.name || places[item.id].name,
+              image: isCustom ? item.image : DEFAULT_PLACES[item.id].image,
+              hasCustomImage: !!isCustom
+            };
+          }
+        });
+      }
     }
 
     renderRooms();
@@ -1117,7 +1201,6 @@
     $("#resetBtn").on("click", reset);
 
     $("#modePractice").on("click", () => setMode("practice"));
-    $("#modeTreasure").on("click", () => setMode("treasure"));
     $("#modeSecret").on("click", () => setMode("secret"));
 
     // Keyboard controls
