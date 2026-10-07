@@ -1061,26 +1061,82 @@
 
   let isListening = false;
   let lastCommandTime = 0;
-  const processedResults = {};
+  let lastCommandId = null;
+  let lastCommandText = "";
+  let currentCooldown = 650;
+  const processedResultIndices = new Set();
 
   const commandPatterns = [
-    { regex: /\b(restart|reset|start over)\b/i, action: () => reset() },
-    { regex: /\b(go straight (three|3) blocks|(three|3) blocks)\b/i, action: () => { goStraight(); setTimeout(goStraight, 370); setTimeout(goStraight, 740); } },
-    { regex: /\b(go straight (two|2) blocks|(two|2) blocks|straight two)\b/i, action: () => { goStraight(); setTimeout(goStraight, 370); } },
-    { regex: /\b(go straight|straight|strait|forward|ahead)\b/i, action: () => goStraight() },
-    { regex: /\b(on (your|the) right|to (your|the) right|it'?s on (your|the) right)\b/i, action: () => { turnRight(); setTimeout(goStraight, 220); } },
-    { regex: /\b(on (your|the) left|to (your|the) left|it'?s on (your|the) left)\b/i, action: () => { turnLeft(); setTimeout(goStraight, 220); } },
-    { regex: /\b(turn left|left)\b/i, action: () => turnLeft() },
-    { regex: /\b(turn right|right|write)\b/i, action: () => turnRight() },
-    { regex: /\b(practice)\b/i, action: () => setMode('practice') },
-    { regex: /\b(secret)\b/i, action: () => setMode('secret') }
+    {
+      id: "reset",
+      regex: /\b(restart|reset|start over)\b/i,
+      cooldown: 600,
+      action: () => reset()
+    },
+    {
+      id: "straight3",
+      regex: /\b(go straight (three|3) blocks|(three|3) blocks)\b/i,
+      cooldown: 1350,
+      action: () => { goStraight(); setTimeout(goStraight, 370); setTimeout(goStraight, 740); }
+    },
+    {
+      id: "straight2",
+      regex: /\b(go straight (two|2) blocks|(two|2) blocks|straight two)\b/i,
+      cooldown: 950,
+      action: () => { goStraight(); setTimeout(goStraight, 370); }
+    },
+    {
+      id: "goStraight",
+      regex: /\b(go straight|straight|strait|forward|ahead)\b/i,
+      cooldown: 650,
+      action: () => goStraight()
+    },
+    {
+      id: "onRight",
+      regex: /\b(on (your|the) right|to (your|the) right|it'?s on (your|the) right)\b/i,
+      cooldown: 850,
+      action: () => { turnRight(); setTimeout(goStraight, 220); }
+    },
+    {
+      id: "onLeft",
+      regex: /\b(on (your|the) left|to (your|the) left|it'?s on (your|the) left)\b/i,
+      cooldown: 850,
+      action: () => { turnLeft(); setTimeout(goStraight, 220); }
+    },
+    {
+      id: "turnLeft",
+      regex: /\b(turn left|left)\b/i,
+      cooldown: 650,
+      action: () => turnLeft()
+    },
+    {
+      id: "turnRight",
+      regex: /\b(turn right|right|write)\b/i,
+      cooldown: 650,
+      action: () => turnRight()
+    },
+    {
+      id: "practice",
+      regex: /\b(practice)\b/i,
+      cooldown: 600,
+      action: () => setMode('practice')
+    },
+    {
+      id: "secret",
+      regex: /\b(secret)\b/i,
+      cooldown: 600,
+      action: () => setMode('secret')
+    }
   ];
 
   function startListening() {
     if (!recognition) return;
     isListening = true;
     lastCommandTime = 0;
-    for (let k in processedResults) delete processedResults[k];
+    lastCommandId = null;
+    lastCommandText = "";
+    currentCooldown = 650;
+    processedResultIndices.clear();
     try { recognition.start(); } catch(e) {}
     $("#listen").addClass("mic-listening btn-success").prop("disabled", true);
     $("#stop").prop("disabled", false).addClass("btn-danger").removeClass("btn-secondary");
@@ -1091,6 +1147,9 @@
     if (!recognition) return;
     isListening = false;
     try { recognition.stop(); } catch(e) {}
+    processedResultIndices.clear();
+    lastCommandId = null;
+    lastCommandText = "";
     $("#listen").removeClass("mic-listening").prop("disabled", false);
     $("#stop").prop("disabled", true).removeClass("btn-danger").addClass("btn-secondary");
     $("#speechTranscript").text("Voice controls stopped.");
@@ -1098,32 +1157,73 @@
 
   if (recognition) {
     recognition.onresult = (event) => {
+      if (!isListening) return;
+
+      // 1. Show real-time interim results in the transcript for immediate visual feedback
+      let latestInterim = "";
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (!event.results[i].isFinal && event.results[i][0]) {
+          latestInterim = event.results[i][0].transcript.trim();
+        }
+      }
+      if (latestInterim) {
+        $("#speechTranscript").text(`Heard: "${latestInterim}"`);
+      }
+
+      // 2. Only execute actions on finalized speech results to prevent mid-utterance duplicate triggers
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         const res = event.results[i];
-        const text = res[0].transcript.toLowerCase().trim();
-        if (text) $("#speechTranscript").text(`Heard: "${text}"`);
-        if (processedResults[i]) continue;
+        if (!res.isFinal) continue;
+        if (processedResultIndices.has(i)) continue;
+        processedResultIndices.add(i);
+
+        const text = res[0] ? res[0].transcript.toLowerCase().trim() : "";
+        if (!text) continue;
+        $("#speechTranscript").text(`Heard: "${text}"`);
 
         const now = Date.now();
-        if (now - lastCommandTime < 260) continue;
+        const elapsed = now - lastCommandTime;
 
-        let matched = false;
+        // Ensure movement/turn animation cooldown has passed
+        if (elapsed < currentCooldown) {
+          continue;
+        }
+
+        // Find matching command
+        let matchedCmd = null;
         for (const cmd of commandPatterns) {
           if (cmd.regex.test(text)) {
-            cmd.action();
-            matched = true;
+            matchedCmd = cmd;
             break;
           }
         }
-        if (matched) {
-          lastCommandTime = Date.now();
-          processedResults[i] = true;
-          if (i > 10) delete processedResults[i - 10];
+        if (!matchedCmd) continue;
+
+        // Browser speech engine deduplication:
+        // Prevent engine echo / trailing repeats from re-triggering the same command within 1200ms
+        if (elapsed < 1200) {
+          const isSameCommand = matchedCmd.id === lastCommandId;
+          const isSubstringOrRepeat = lastCommandText && (
+            text === lastCommandText ||
+            lastCommandText.includes(text) ||
+            text.includes(lastCommandText)
+          );
+          if (isSameCommand || isSubstringOrRepeat) {
+            continue;
+          }
         }
+
+        // Execute action
+        matchedCmd.action();
+        lastCommandTime = Date.now();
+        lastCommandId = matchedCmd.id;
+        lastCommandText = text;
+        currentCooldown = matchedCmd.cooldown || 650;
       }
     };
 
     recognition.onend = () => {
+      processedResultIndices.clear();
       if (isListening) {
         setTimeout(() => {
           if (isListening) {
