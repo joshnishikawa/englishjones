@@ -72,7 +72,8 @@
     overflow: hidden;
   }
 
-  /* Map Board Container taking 100vh */
+  /* Directions Board Container taking 100vh */
+  .directions-board,
   .map-board {
     position: relative;
     width: 100%;
@@ -86,7 +87,7 @@
     box-sizing: border-box;
   }
 
-  /* 4x3 Rooms Grid with asphalt street gaps between blocks */
+  /* 4x3 Rooms Grid with street / hallway gaps between blocks */
   .rooms-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -103,9 +104,10 @@
     box-sizing: border-box;
     position: relative;
     z-index: 6;
+    transition: background-color 0.25s ease;
   }
 
-  /* Top and Bottom Streets matching 20px width of other streets */
+  /* Top and Bottom Streets / Hallways matching 20px width of other paths */
   .top-street,
   .bottom-street {
     height: 20px;
@@ -115,6 +117,7 @@
     box-sizing: border-box;
     position: relative;
     z-index: 6;
+    transition: background-color 0.25s ease, border-color 0.25s ease;
   }
 
   .top-street {
@@ -123,6 +126,31 @@
 
   .bottom-street {
     border-radius: 0 0 6px 6px;
+  }
+
+  /* School Theme: Hallway styling instead of asphalt streets */
+  .theme-school .rooms-grid,
+  .theme-school .top-street,
+  .theme-school .bottom-street {
+    background-color: #dfd5c6;
+    background-image: 
+      linear-gradient(90deg, rgba(140, 110, 85, 0.16) 1px, transparent 1px),
+      linear-gradient(0deg, rgba(140, 110, 85, 0.10) 1px, transparent 1px);
+    background-size: 28px 28px;
+    box-shadow: inset 0 0 10px rgba(90, 68, 45, 0.12);
+  }
+
+  .theme-school .top-street {
+    border-bottom: 2px solid #b8a692;
+  }
+
+  .theme-school .bottom-street {
+    border-top: 2px solid #b8a692;
+  }
+
+  /* School Theme: Hallways have clean tile floors without street centerlines/dashed borders */
+  .theme-school #streetLinesSvg {
+    display: none !important;
   }
 
   .room-box {
@@ -295,7 +323,7 @@
 </style>
 
 <div class="d-flex align-items-center mb-2" style="position:relative;">
-  <%- include('../../menu/item_map'); -%>
+  <%- include('../../menu/item_directions'); -%>
 
   <!-- Actions -->
   <button id="resetBtn" class="btn btn-sm btn-outline-secondary py-0 mx-3 d-flex align-items-center">
@@ -349,7 +377,7 @@
 
   <!-- Maximum Area Playfield taking 100% view height -->
   <main class="main-play-area">
-    <div class="map-board" id="mapBoard">
+    <div class="directions-board map-board" id="directionsBoard">
       <div class="top-street" id="topStreet"></div>
       <div class="rooms-grid" id="roomsGrid">
         <!-- 12 Rooms generated dynamically -->
@@ -373,6 +401,7 @@
      ========================================================================== */
   function svgIcon(name, color, bg) {
     const icons = {
+      // Town Theme Icons
       school: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><rect x="12" y="78" width="76" height="4" rx="2" fill="#94a3b8"/><rect x="22" y="42" width="56" height="36" rx="2" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/><rect x="40" y="24" width="20" height="20" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/><polygon points="50,11 36,25 64,25" fill="#dc2626"/><polygon points="19,43 50,30 81,43" fill="#ef4444"/><circle cx="50" cy="34" r="5" fill="#fef08a" stroke="#ca8a04" stroke-width="1"/><line x1="50" y1="34" x2="50" y2="31" stroke="#78350f" stroke-width="1" stroke-linecap="round"/><line x1="50" y1="34" x2="52.5" y2="34" stroke="#78350f" stroke-width="1" stroke-linecap="round"/><rect x="28" y="48" width="8" height="8" rx="1" fill="#93c5fd"/><rect x="64" y="48" width="8" height="8" rx="1" fill="#93c5fd"/><rect x="44" y="60" width="12" height="18" rx="1" fill="#2563eb"/><line x1="50" y1="60" x2="50" y2="78" stroke="#1d4ed8" stroke-width="1"/><circle cx="48" cy="69" r="0.8" fill="#facc15"/><circle cx="52" cy="69" r="0.8" fill="#facc15"/><line x1="50" y1="11" x2="50" y2="5" stroke="#64748b" stroke-width="1"/><path d="M50 5 L56 7.5 L50 10 Z" fill="#2563eb"/></svg>`,
       park: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><circle cx="78" cy="22" r="8" fill="#fde047" opacity="0.85"/><path d="M0 72 Q35 64 65 73 T100 70 L100 100 L0 100 Z" fill="#86efac"/><path d="M0 78 Q40 70 80 80 L100 77 L100 100 L0 100 Z" fill="#4ade80"/><rect x="28" y="52" width="7" height="28" rx="2" fill="#78350f"/><circle cx="31.5" cy="38" r="17" fill="#22c55e"/><circle cx="22" cy="42" r="11" fill="#16a34a"/><circle cx="41" cy="40" r="12" fill="#15803d"/><rect x="68" y="56" width="5" height="22" rx="1.5" fill="#78350f"/><circle cx="70.5" cy="46" r="13" fill="#16a34a"/><circle cx="76" cy="49" r="9" fill="#15803d"/><path d="M42 74 L58 74" stroke="#b45309" stroke-width="3" stroke-linecap="round"/><path d="M43 70 L57 70" stroke="#d97706" stroke-width="2.5" stroke-linecap="round"/><line x1="44" y1="74" x2="44" y2="81" stroke="#475569" stroke-width="1.8"/><line x1="56" y1="74" x2="56" y2="81" stroke="#475569" stroke-width="1.8"/><circle cx="15" cy="85" r="2.5" fill="#f43f5e"/><circle cx="15" cy="85" r="1" fill="#fef08a"/><circle cx="86" cy="85" r="2.5" fill="#fbbf24"/><circle cx="86" cy="85" r="1" fill="#f43f5e"/></svg>`,
       hospital: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><rect x="12" y="80" width="76" height="4" rx="2" fill="#cbd5e1"/><rect x="22" y="24" width="56" height="56" rx="4" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/><rect x="22" y="24" width="56" height="6" rx="2" fill="#ef4444"/><circle cx="50" cy="42" r="12" fill="#fee2e2"/><path d="M47 34 h6 v5 h5 v6 h-5 v5 h-6 v-5 h-5 v-6 h5 Z" fill="#dc2626"/><rect x="41" y="62" width="18" height="18" rx="2" fill="#93c5fd" stroke="#3b82f6" stroke-width="1"/><line x1="50" y1="62" x2="50" y2="80" stroke="#1d4ed8" stroke-width="1"/><rect x="27" y="38" width="8" height="9" rx="1" fill="#bfdbfe"/><rect x="65" y="38" width="8" height="9" rx="1" fill="#bfdbfe"/><rect x="27" y="52" width="8" height="9" rx="1" fill="#bfdbfe"/><rect x="65" y="52" width="8" height="9" rx="1" fill="#bfdbfe"/></svg>`,
@@ -383,33 +412,80 @@
       bakery: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><rect x="10" y="80" width="80" height="4" rx="2" fill="#94a3b8"/><rect x="18" y="24" width="64" height="56" rx="3" fill="#fffbeb" stroke="#fde68a" stroke-width="1.5"/><path d="M16 26 L84 26 L80 40 L20 40 Z" fill="#d97706"/><polygon points="25,26 31,26 29,40 23,40" fill="#fef3c7"/><polygon points="38,26 44,26 42,40 36,40" fill="#fef3c7"/><polygon points="51,26 57,26 55,40 49,40" fill="#fef3c7"/><polygon points="64,26 70,26 68,40 62,40" fill="#fef3c7"/><polygon points="77,26 83,26 81,40 75,40" fill="#fef3c7"/><path d="M20 40 Q24 43 28 40 Q32 43 36 40 Q40 43 44 40 Q48 43 52 40 Q56 43 60 40 Q64 43 68 40 Q72 43 76 40 Q80 43 84 40" fill="#d97706"/><rect x="23" y="47" width="33" height="27" rx="3" fill="#ffffff" stroke="#fcd34d" stroke-width="1.2"/><path d="M27 61 C28 54, 43 54, 45 61 C41 59, 31 59, 27 61 Z" fill="#f59e0b" stroke="#b45309" stroke-width="0.8"/><ellipse cx="43" cy="65" rx="9" ry="4.5" fill="#d97706"/><line x1="39" y1="63" x2="41" y2="67" stroke="#fffbeb" stroke-width="1"/><line x1="43" y1="63" x2="45" y2="67" stroke="#fffbeb" stroke-width="1"/><rect x="61" y="47" width="16" height="33" rx="1" fill="#78350f"/><rect x="64" y="50" width="10" height="12" rx="1" fill="#e0f2fe"/><circle cx="64" cy="67" r="1.2" fill="#facc15"/></svg>`,
       station: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><polygon points="50,6 14,18 86,18" fill="#0284c7"/><rect x="12" y="17" width="76" height="3" rx="1" fill="#0369a1"/><rect x="42" y="9" width="16" height="11" rx="1.5" fill="#0369a1"/><circle cx="50" cy="14.5" r="4" fill="#ffffff" stroke="#0284c7" stroke-width="0.8"/><line x1="50" y1="14.5" x2="50" y2="12" stroke="#1e293b" stroke-width="0.9" stroke-linecap="round"/><line x1="50" y1="14.5" x2="52.2" y2="15" stroke="#1e293b" stroke-width="0.9" stroke-linecap="round"/><rect x="25" y="21" width="50" height="7.5" rx="2" fill="#0f172a"/><text x="50" y="26.6" font-family="sans-serif" font-weight="900" font-size="4.8" fill="#facc15" text-anchor="middle" letter-spacing="1.2">STATION</text><rect x="15" y="20" width="3" height="58" fill="#94a3b8" rx="1"/><rect x="82" y="20" width="3" height="58" fill="#94a3b8" rx="1"/><rect x="8" y="58" width="16" height="24" rx="2" fill="#cbd5e1"/><line x1="22" y1="58" x2="22" y2="82" stroke="#facc15" stroke-width="1.5" stroke-dasharray="2 1.5"/><line x1="12" y1="46" x2="12" y2="58" stroke="#64748b" stroke-width="1.2"/><rect x="9" y="44" width="6" height="4" rx="1" fill="#ffffff" stroke="#0284c7" stroke-width="0.7"/><rect x="10" y="45.5" width="4" height="1" fill="#0284c7"/><rect x="6" y="83" width="88" height="8" rx="2" fill="#e2e8f0"/><rect x="12" y="85" width="76" height="3" fill="#78350f" rx="0.5"/><line x1="20" y1="84" x2="20" y2="89" stroke="#92400e" stroke-width="2.5"/><line x1="32" y1="84" x2="32" y2="89" stroke="#92400e" stroke-width="2.5"/><line x1="44" y1="84" x2="44" y2="89" stroke="#92400e" stroke-width="2.5"/><line x1="56" y1="84" x2="56" y2="89" stroke="#92400e" stroke-width="2.5"/><line x1="68" y1="84" x2="68" y2="89" stroke="#92400e" stroke-width="2.5"/><line x1="80" y1="84" x2="80" y2="89" stroke="#92400e" stroke-width="2.5"/><line x1="8" y1="84" x2="92" y2="84" stroke="#475569" stroke-width="2" stroke-linecap="round"/><line x1="8" y1="87.5" x2="92" y2="87.5" stroke="#334155" stroke-width="1.5" stroke-linecap="round"/><path d="M44 33 L50 29 L56 33 L50 35 Z" fill="none" stroke="#64748b" stroke-width="1.5" stroke-linejoin="round"/><line x1="46" y1="29" x2="54" y2="29" stroke="#334155" stroke-width="2" stroke-linecap="round"/><rect x="30" y="78" width="10" height="6" rx="1.5" fill="#334155"/><rect x="60" y="78" width="10" height="6" rx="1.5" fill="#334155"/><circle cx="34" cy="82" r="3" fill="#1e293b"/><circle cx="66" cy="82" r="3" fill="#1e293b"/><rect x="44" y="80" width="12" height="3" rx="1" fill="#475569"/><rect x="25" y="34" width="50" height="46" rx="8" fill="#ffffff" stroke="#0284c7" stroke-width="2"/><path d="M25 42 Q50 33 75 42" fill="#0284c7"/><rect x="25.5" y="41" width="49" height="2" fill="#0369a1"/><rect x="40" y="38" width="20" height="4" rx="1" fill="#0f172a"/><rect x="42" y="39.2" width="16" height="1.6" rx="0.5" fill="#22c55e"/><rect x="29" y="45" width="42" height="17" rx="4" fill="#0f172a"/><path d="M31 47 L43 47 L35 60 L31 60 Z" fill="#38bdf8" opacity="0.35"/><path d="M46 47 L51 47 L41 60 L37 60 Z" fill="#38bdf8" opacity="0.2"/><line x1="50" y1="46" x2="50" y2="61" stroke="#334155" stroke-width="1"/><rect x="25.5" y="64" width="49" height="4.5" fill="#0284c7"/><rect x="25.5" y="68.5" width="49" height="1.5" fill="#38bdf8"/><circle cx="34" cy="73.5" r="3.8" fill="#fef08a" stroke="#ca8a04" stroke-width="1"/><circle cx="33" cy="72.5" r="1.3" fill="#ffffff"/><circle cx="66" cy="73.5" r="3.8" fill="#fef08a" stroke="#ca8a04" stroke-width="1"/><circle cx="65" cy="72.5" r="1.3" fill="#ffffff"/><rect x="31.5" y="65" width="3.5" height="1.8" rx="0.8" fill="#ef4444"/><rect x="65" y="65" width="3.5" height="1.8" rx="0.8" fill="#ef4444"/><polygon points="50,71 47,74.5 53,74.5" fill="#0284c7"/></svg>`,
       zoo: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><rect x="12" y="80" width="76" height="4" rx="2" fill="#ca8a04"/><rect x="16" y="28" width="8" height="52" rx="2" fill="#78350f"/><rect x="76" y="28" width="8" height="52" rx="2" fill="#78350f"/><path d="M14 28 Q50 16 86 28 L86 36 Q50 24 14 36 Z" fill="#92400e"/><text x="50" y="29" font-family="sans-serif" font-weight="900" font-size="9" fill="#fef08a" text-anchor="middle">ZOO</text><circle cx="50" cy="56" r="18" fill="#d97706"/><circle cx="38" cy="43" r="5" fill="#b45309"/><circle cx="62" cy="43" r="5" fill="#b45309"/><circle cx="50" cy="57" r="13" fill="#fde047"/><ellipse cx="45" cy="54" rx="1.8" ry="2.2" fill="#1e293b"/><ellipse cx="55" cy="54" rx="1.8" ry="2.2" fill="#1e293b"/><circle cx="45.5" cy="53" r="0.6" fill="#ffffff"/><circle cx="55.5" cy="53" r="0.6" fill="#ffffff"/><polygon points="50,58 48,60 52,60" fill="#b45309"/><path d="M48 61 Q50 63 52 61" fill="none" stroke="#78350f" stroke-width="1" stroke-linecap="round"/><circle cx="43" cy="58" r="2" fill="#fca5a5" opacity="0.6"/><circle cx="57" cy="58" r="2" fill="#fca5a5" opacity="0.6"/><path d="M10 68 Q22 58 24 71 Q17 75 10 68 Z" fill="#22c55e"/><path d="M90 68 Q78 58 76 71 Q83 75 90 68 Z" fill="#16a34a"/></svg>`,
-      playground: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><path d="M0 76 Q50 71 100 76 L100 100 L0 100 Z" fill="#86efac"/><line x1="8" y1="28" x2="52" y2="28" stroke="#1d4ed8" stroke-width="3.5" stroke-linecap="round"/><line x1="8" y1="76" x2="14" y2="28" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/><line x1="20" y1="76" x2="14" y2="28" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/><line x1="10" y1="60" x2="18" y2="60" stroke="#3b82f6" stroke-width="2"/><line x1="40" y1="76" x2="46" y2="28" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/><line x1="52" y1="76" x2="46" y2="28" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/><line x1="42" y1="60" x2="50" y2="60" stroke="#3b82f6" stroke-width="2"/><line x1="25" y1="29" x2="25" y2="58" stroke="#64748b" stroke-width="1.2"/><line x1="35" y1="29" x2="35" y2="58" stroke="#64748b" stroke-width="1.2"/><rect x="22" y="58" width="16" height="3.5" rx="1.5" fill="#dc2626"/><line x1="62" y1="76" x2="66" y2="36" stroke="#eab308" stroke-width="2.5"/><line x1="62.5" y1="66" x2="66.5" y2="66" stroke="#ca8a04" stroke-width="1.5"/><line x1="63.5" y1="56" x2="67.5" y2="56" stroke="#ca8a04" stroke-width="1.5"/><line x1="64.5" y1="46" x2="68.5" y2="46" stroke="#ca8a04" stroke-width="1.5"/><circle cx="66" cy="36" r="3" fill="#eab308"/><path d="M66 38 Q78 44 92 74" fill="none" stroke="#ef4444" stroke-width="4.5" stroke-linecap="round"/><path d="M66 40 Q78 46 92 76" fill="none" stroke="#facc15" stroke-width="3" stroke-linecap="round"/></svg>`,
-      museum: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><polygon points="50,15 16,32 84,32" fill="#9333ea"/><circle cx="50" cy="24" r="4.5" fill="#f3e8ff" stroke="#7e22ce" stroke-width="1"/><rect x="18" y="32" width="64" height="4" fill="#7e22ce"/><rect x="22" y="36" width="8" height="37" rx="1" fill="#ffffff" stroke="#e9d5ff" stroke-width="1"/><rect x="38" y="36" width="8" height="37" rx="1" fill="#ffffff" stroke="#e9d5ff" stroke-width="1"/><rect x="54" y="36" width="8" height="37" rx="1" fill="#ffffff" stroke="#e9d5ff" stroke-width="1"/><rect x="70" y="36" width="8" height="37" rx="1" fill="#ffffff" stroke="#e9d5ff" stroke-width="1"/><path d="M47 48 Q45 44 50 44 Q55 44 53 48 Q56 55 52 64 L48 64 Q44 55 47 48 Z" fill="#d97706"/><rect x="16" y="73" width="68" height="3.5" fill="#7e22ce"/><rect x="12" y="76.5" width="76" height="3.5" fill="#a855f7"/><rect x="8" y="80" width="84" height="4" rx="2" fill="#cbd5e1"/></svg>`
+      playground: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><path d="M0 76 Q50 71 100 76 L100 100 L0 100 Z" fill="#b48256"/><path d="M0 83 Q50 79 100 83 L100 100 L0 100 Z" fill="#9f6d42"/><line x1="8" y1="28" x2="52" y2="28" stroke="#1d4ed8" stroke-width="3.5" stroke-linecap="round"/><line x1="8" y1="76" x2="14" y2="28" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/><line x1="20" y1="76" x2="14" y2="28" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/><line x1="10" y1="60" x2="18" y2="60" stroke="#3b82f6" stroke-width="2"/><line x1="40" y1="76" x2="46" y2="28" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/><line x1="52" y1="76" x2="46" y2="28" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/><line x1="42" y1="60" x2="50" y2="60" stroke="#3b82f6" stroke-width="2"/><line x1="25" y1="29" x2="25" y2="58" stroke="#64748b" stroke-width="1.2"/><line x1="35" y1="29" x2="35" y2="58" stroke="#64748b" stroke-width="1.2"/><rect x="22" y="58" width="16" height="3.5" rx="1.5" fill="#dc2626"/><line x1="62" y1="76" x2="66" y2="36" stroke="#eab308" stroke-width="2.5"/><line x1="62.5" y1="66" x2="66.5" y2="66" stroke="#ca8a04" stroke-width="1.5"/><line x1="63.5" y1="56" x2="67.5" y2="56" stroke="#ca8a04" stroke-width="1.5"/><line x1="64.5" y1="46" x2="68.5" y2="46" stroke="#ca8a04" stroke-width="1.5"/><circle cx="66" cy="36" r="3" fill="#eab308"/><path d="M66 38 Q78 44 92 74" fill="none" stroke="#ef4444" stroke-width="4.5" stroke-linecap="round"/><path d="M66 40 Q78 46 92 76" fill="none" stroke="#facc15" stroke-width="3" stroke-linecap="round"/></svg>`,
+      museum: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><polygon points="50,15 16,32 84,32" fill="#9333ea"/><circle cx="50" cy="24" r="4.5" fill="#f3e8ff" stroke="#7e22ce" stroke-width="1"/><rect x="18" y="32" width="64" height="4" fill="#7e22ce"/><rect x="22" y="36" width="8" height="37" rx="1" fill="#ffffff" stroke="#e9d5ff" stroke-width="1"/><rect x="38" y="36" width="8" height="37" rx="1" fill="#ffffff" stroke="#e9d5ff" stroke-width="1"/><rect x="54" y="36" width="8" height="37" rx="1" fill="#ffffff" stroke="#e9d5ff" stroke-width="1"/><rect x="70" y="36" width="8" height="37" rx="1" fill="#ffffff" stroke="#e9d5ff" stroke-width="1"/><path d="M47 48 Q45 44 50 44 Q55 44 53 48 Q56 55 52 64 L48 64 Q44 55 47 48 Z" fill="#d97706"/><rect x="16" y="73" width="68" height="3.5" fill="#7e22ce"/><rect x="12" y="76.5" width="76" height="3.5" fill="#a855f7"/><rect x="8" y="80" width="84" height="4" rx="2" fill="#cbd5e1"/></svg>`,
+
+      // School Theme Icons
+      classroom: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><rect x="8" y="82" width="84" height="4" rx="2" fill="#cbd5e1"/><rect x="14" y="16" width="72" height="42" rx="3" fill="#15803d" stroke="#78350f" stroke-width="2.5"/><rect x="16" y="55" width="68" height="3" fill="#92400e"/><text x="24" y="33" font-family="sans-serif" font-weight="900" font-size="10" fill="#ffffff" letter-spacing="1">ABC</text><text x="24" y="47" font-family="sans-serif" font-weight="700" font-size="8.5" fill="#fde047">1 + 2 = 3</text><circle cx="70" cy="34" r="6" fill="none" stroke="#f472b6" stroke-width="1.8"/><polygon points="68,26 72,26 70,22" fill="#4ade80"/><circle cx="50" cy="11" r="5.5" fill="#ffffff" stroke="#64748b" stroke-width="1.2"/><line x1="50" y1="11" x2="50" y2="8" stroke="#1e293b" stroke-width="1"/><line x1="50" y1="11" x2="53" y2="11" stroke="#1e293b" stroke-width="1"/><rect x="18" y="66" width="28" height="15" rx="2" fill="#d97706"/><rect x="22" y="77" width="3" height="9" fill="#475569"/><rect x="41" y="77" width="3" height="9" fill="#475569"/><rect x="24" y="68" width="10" height="7" rx="1" fill="#38bdf8"/><rect x="54" y="66" width="28" height="15" rx="2" fill="#d97706"/><rect x="58" y="77" width="3" height="9" fill="#475569"/><rect x="77" y="77" width="3" height="9" fill="#475569"/><rect x="60" y="68" width="10" height="7" rx="1" fill="#ef4444"/></svg>`,
+      scienceroom: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><rect x="8" y="80" width="84" height="4" rx="2" fill="#cbd5e1"/><rect x="12" y="60" width="76" height="6" rx="1" fill="#334155"/><rect x="16" y="66" width="6" height="16" fill="#64748b"/><rect x="78" y="66" width="6" height="16" fill="#64748b"/><polygon points="26,58 38,58 35,42 35,32 29,32 29,42" fill="#67e8f9" opacity="0.4"/><polygon points="26,58 38,58 35,42 29,42" fill="#10b981"/><path d="M26 58 L38 58 L35 42 L35 32 L29 32 L29 42 Z" fill="none" stroke="#0f766e" stroke-width="1.5" stroke-linejoin="round"/><circle cx="31" cy="48" r="1.5" fill="#ffffff" opacity="0.8"/><circle cx="34" cy="52" r="1.2" fill="#ffffff" opacity="0.8"/><circle cx="30" cy="54" r="1.8" fill="#ffffff" opacity="0.8"/><rect x="42" y="44" width="22" height="16" rx="1" fill="#fed7aa" stroke="#c2410c" stroke-width="1"/><rect x="45" y="34" width="3.5" height="16" rx="1.5" fill="#ef4444"/><rect x="51" y="30" width="3.5" height="20" rx="1.5" fill="#3b82f6"/><rect x="57" y="36" width="3.5" height="14" rx="1.5" fill="#facc15"/><path d="M72 58 L84 58 L80 54 L76 54 Z" fill="#334155"/><path d="M78 54 C78 44 86 42 84 32" fill="none" stroke="#334155" stroke-width="3" stroke-linecap="round"/><rect x="70" y="30" width="12" height="6" rx="1" transform="rotate(-30 76 33)" fill="#0284c7"/><circle cx="78" cy="46" r="3" fill="#94a3b8"/><circle cx="24" cy="18" r="3.5" fill="#3b82f6"/><circle cx="36" cy="22" r="3" fill="#ef4444"/><line x1="24" y1="18" x2="36" y2="22" stroke="#94a3b8" stroke-width="1.5"/><circle cx="30" cy="12" r="2.5" fill="#10b981"/><line x1="24" y1="18" x2="30" y2="12" stroke="#94a3b8" stroke-width="1.5"/></svg>`,
+      musicroom: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><rect x="8" y="82" width="84" height="4" rx="2" fill="#cbd5e1"/><path d="M16 46 Q16 32 36 30 Q54 28 66 38 L66 66 L16 66 Z" fill="#1e293b"/><polygon points="16,46 44,18 46,19 20,48" fill="#0f172a"/><line x1="42" y1="20" x2="48" y2="38" stroke="#d97706" stroke-width="1.8"/><rect x="18" y="66" width="4" height="18" rx="1" fill="#0f172a"/><rect x="62" y="66" width="4" height="18" rx="1" fill="#0f172a"/><rect x="14" y="60" width="54" height="8" rx="1" fill="#ffffff" stroke="#334155" stroke-width="1"/><rect x="18" y="60" width="2.5" height="5" fill="#0f172a"/><rect x="23" y="60" width="2.5" height="5" fill="#0f172a"/><rect x="30" y="60" width="2.5" height="5" fill="#0f172a"/><rect x="35" y="60" width="2.5" height="5" fill="#0f172a"/><rect x="40" y="60" width="2.5" height="5" fill="#0f172a"/><rect x="47" y="60" width="2.5" height="5" fill="#0f172a"/><rect x="52" y="60" width="2.5" height="5" fill="#0f172a"/><rect x="59" y="60" width="2.5" height="5" fill="#0f172a"/><polygon points="76,62 82,50 86,50 80,62" fill="#78350f"/><rect x="74" y="44" width="16" height="12" rx="1" fill="#ffffff" stroke="#cbd5e1" stroke-width="0.8"/><line x1="76" y1="48" x2="88" y2="48" stroke="#334155" stroke-width="0.8"/><line x1="76" y1="51" x2="88" y2="51" stroke="#334155" stroke-width="0.8"/><line x1="78" y1="62" x2="78" y2="82" stroke="#475569" stroke-width="2"/><circle cx="68" cy="18" r="3" fill="#d97706"/><line x1="71" y1="18" x2="71" y2="8" stroke="#d97706" stroke-width="1.8"/><circle cx="80" cy="14" r="3" fill="#d97706"/><line x1="83" y1="14" x2="83" y2="6" stroke="#d97706" stroke-width="1.8"/><line x1="71" y1="8" x2="83" y2="6" stroke="#d97706" stroke-width="2.5"/></svg>`,
+      artroom: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><rect x="8" y="82" width="84" height="4" rx="2" fill="#cbd5e1"/><line x1="28" y1="18" x2="16" y2="82" stroke="#92400e" stroke-width="3" stroke-linecap="round"/><line x1="38" y1="18" x2="50" y2="82" stroke="#92400e" stroke-width="3" stroke-linecap="round"/><line x1="33" y1="18" x2="33" y2="82" stroke="#78350f" stroke-width="2.5" stroke-linecap="round"/><rect x="18" y="26" width="30" height="34" rx="2" fill="#ffffff" stroke="#d97706" stroke-width="1.5"/><circle cx="26" cy="36" r="4.5" fill="#facc15"/><polygon points="18,60 28,44 38,60" fill="#15803d"/><polygon points="30,60 38,48 48,60" fill="#22c55e"/><rect x="14" y="58" width="38" height="3" rx="1" fill="#78350f"/><ellipse cx="72" cy="56" rx="18" ry="14" fill="#fde68a" stroke="#d97706" stroke-width="1.2"/><circle cx="82" cy="56" r="3.5" fill="#fdf2f8"/><circle cx="62" cy="52" r="3" fill="#ef4444"/><circle cx="68" cy="47" r="3" fill="#3b82f6"/><circle cx="76" cy="49" r="3" fill="#10b981"/><circle cx="62" cy="60" r="3" fill="#f59e0b"/><circle cx="70" cy="64" r="3" fill="#8b5cf6"/><line x1="60" y1="78" x2="84" y2="38" stroke="#78350f" stroke-width="2" stroke-linecap="round"/><polygon points="84,38 86,34 82,36" fill="#ef4444"/></svg>`,
+      gym: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><rect x="10" y="70" width="80" height="18" rx="2" fill="#fed7aa"/><line x1="10" y1="78" x2="90" y2="78" stroke="#ea580c" stroke-width="1.2"/><ellipse cx="50" cy="78" rx="16" ry="6" fill="none" stroke="#ea580c" stroke-width="1.2"/><rect x="16" y="16" width="32" height="24" rx="2" fill="#ffffff" stroke="#dc2626" stroke-width="2"/><rect x="24" y="24" width="16" height="12" fill="none" stroke="#dc2626" stroke-width="1.5"/><rect x="27" y="36" width="10" height="2" fill="#ea580c"/><polygon points="28,38 36,38 34,48 30,48" fill="none" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="2 1.5"/><line x1="16" y1="28" x2="8" y2="28" stroke="#64748b" stroke-width="3"/><line x1="8" y1="28" x2="8" y2="76" stroke="#64748b" stroke-width="3.5"/><circle cx="68" cy="46" r="10" fill="#f97316" stroke="#c2410c" stroke-width="1.2"/><line x1="58" y1="46" x2="78" y2="46" stroke="#431407" stroke-width="1"/><line x1="68" y1="36" x2="68" y2="56" stroke="#431407" stroke-width="1"/><ellipse cx="68" cy="46" rx="5" ry="9" fill="none" stroke="#431407" stroke-width="0.9"/><path d="M68 60 Q66 68 62 70" fill="none" stroke="#f97316" stroke-width="1.2" stroke-dasharray="2 2"/></svg>`,
+      computerroom: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><rect x="8" y="82" width="84" height="4" rx="2" fill="#cbd5e1"/><rect x="14" y="62" width="72" height="6" rx="1" fill="#334155"/><rect x="18" y="68" width="5" height="16" fill="#64748b"/><rect x="77" y="68" width="5" height="16" fill="#64748b"/><rect x="30" y="24" width="40" height="28" rx="2" fill="#0f172a" stroke="#475569" stroke-width="1.5"/><rect x="33" y="27" width="34" height="22" rx="1" fill="#0284c7"/><rect x="35" y="29" width="30" height="3" rx="0.5" fill="#0369a1"/><circle cx="37" cy="30.5" r="0.8" fill="#f87171"/><circle cx="39.5" cy="30.5" r="0.8" fill="#facc15"/><circle cx="42" cy="30.5" r="0.8" fill="#4ade80"/><line x1="36" y1="36" x2="52" y2="36" stroke="#ffffff" stroke-width="1.2"/><line x1="36" y1="40" x2="60" y2="40" stroke="#fef08a" stroke-width="1.2"/><line x1="36" y1="44" x2="48" y2="44" stroke="#86efac" stroke-width="1.2"/><rect x="47" y="52" width="6" height="7" fill="#64748b"/><rect x="42" y="59" width="16" height="3" rx="1" fill="#475569"/><rect x="34" y="63" width="22" height="4" rx="1" fill="#94a3b8"/><rect x="60" y="63" width="4" height="4" rx="1" fill="#94a3b8"/><path d="M44 14 A8 8 0 0 1 56 14" fill="none" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round"/><path d="M40 10 A14 14 0 0 1 60 10" fill="none" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round"/><circle cx="50" cy="18" r="1.5" fill="#38bdf8"/></svg>`,
+      schooloffice: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><rect x="8" y="82" width="84" height="4" rx="2" fill="#cbd5e1"/><rect x="18" y="16" width="64" height="15" rx="3" fill="#1e3a8a"/><rect x="22" y="19" width="56" height="9" rx="1.5" fill="#3b82f6"/><text x="50" y="26" font-family="sans-serif" font-weight="900" font-size="6" fill="#ffffff" text-anchor="middle" letter-spacing="0.8">SCHOOL OFFICE</text><rect x="12" y="52" width="76" height="30" rx="2" fill="#d97706"/><rect x="10" y="48" width="80" height="6" rx="2" fill="#b45309"/><rect x="20" y="32" width="60" height="16" rx="1" fill="#e0f2fe" opacity="0.6"/><line x1="50" y1="32" x2="50" y2="48" stroke="#94a3b8" stroke-width="1.5"/><rect x="16" y="58" width="20" height="20" rx="1" fill="#92400e"/><circle cx="26" cy="68" r="1.5" fill="#facc15"/><rect x="64" y="58" width="20" height="20" rx="1" fill="#92400e"/><circle cx="74" cy="68" r="1.5" fill="#facc15"/><circle cx="28" cy="45" r="3.5" fill="#ca8a04"/><rect x="25" y="46.5" width="6" height="1.5" fill="#78350f"/><line x1="28" y1="41.5" x2="28" y2="40" stroke="#ca8a04" stroke-width="1.5"/><rect x="42" y="42" width="16" height="6" rx="1" fill="#ffffff" stroke="#cbd5e1" stroke-width="0.8"/><line x1="44" y1="44" x2="56" y2="44" stroke="#dc2626" stroke-width="0.8"/><line x1="44" y1="46" x2="52" y2="46" stroke="#334155" stroke-width="0.8"/><rect x="68" y="40" width="8" height="8" rx="1" fill="#475569"/><circle cx="72" cy="44" r="2.5" fill="#38bdf8"/></svg>`,
+      teachersoffice: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><rect x="8" y="82" width="84" height="4" rx="2" fill="#cbd5e1"/><rect x="16" y="56" width="68" height="8" rx="2" fill="#475569"/><rect x="20" y="64" width="6" height="20" fill="#334155"/><rect x="74" y="64" width="6" height="20" fill="#334155"/><rect x="52" y="64" width="22" height="18" rx="1" fill="#1e293b"/><rect x="22" y="48" width="16" height="3" rx="0.5" fill="#3b82f6"/><rect x="21" y="44" width="16" height="3" rx="0.5" fill="#10b981"/><rect x="22" y="40" width="16" height="3" rx="0.5" fill="#ef4444"/><text x="32" y="38" font-family="sans-serif" font-weight="900" font-size="7" fill="#dc2626">100</text><line x1="38" y1="42" x2="44" y2="34" stroke="#dc2626" stroke-width="1.5" stroke-linecap="round"/><polygon points="46,55 64,55 62,40 48,40" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1"/><rect x="50" y="43" width="10" height="8" fill="#38bdf8"/><polygon points="44,56 66,56 68,58 42,58" fill="#94a3b8"/><rect x="68" y="46" width="6" height="9" rx="1" fill="#f59e0b"/><line x1="70" y1="46" x2="69" y2="40" stroke="#dc2626" stroke-width="1"/><line x1="72" y1="46" x2="72" y2="38" stroke="#3b82f6" stroke-width="1"/><line x1="74" y1="46" x2="75" y2="39" stroke="#10b981" stroke-width="1"/></svg>`,
+      principalsoffice: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><rect x="8" y="82" width="84" height="4" rx="2" fill="#cbd5e1"/><rect x="36" y="14" width="28" height="20" rx="2" fill="#fef3c7" stroke="#b45309" stroke-width="2"/><circle cx="50" cy="24" r="4" fill="#f59e0b"/><polygon points="48,27 50,31 52,27" fill="#dc2626"/><rect x="14" y="54" width="72" height="12" rx="2" fill="#78350f" stroke="#451a03" stroke-width="1.5"/><rect x="18" y="66" width="64" height="18" fill="#92400e"/><rect x="22" y="68" width="16" height="14" rx="1" fill="#78350f"/><circle cx="30" cy="74" r="1" fill="#facc15"/><rect x="62" y="68" width="16" height="14" rx="1" fill="#78350f"/><circle cx="70" cy="74" r="1" fill="#facc15"/><rect x="42" y="51" width="16" height="4" rx="0.5" fill="#facc15" stroke="#ca8a04" stroke-width="0.8"/><path d="M42 52 C40 38 60 38 58 52 Z" fill="#1e1b4b"/><circle cx="26" cy="47" r="5" fill="#0284c7" stroke="#ca8a04" stroke-width="1"/><path d="M23 45 Q26 44 28 47" fill="#22c55e"/><line x1="26" y1="52" x2="26" y2="54" stroke="#ca8a04" stroke-width="1.5"/></svg>`,
+      nursesoffice: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><rect x="8" y="82" width="84" height="4" rx="2" fill="#cbd5e1"/><rect x="14" y="58" width="46" height="10" rx="2" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/><rect x="16" y="54" width="12" height="6" rx="2" fill="#f1f5f9"/><line x1="16" y1="68" x2="16" y2="82" stroke="#64748b" stroke-width="2.5"/><line x1="58" y1="68" x2="58" y2="82" stroke="#64748b" stroke-width="2.5"/><rect x="28" y="58" width="30" height="10" fill="#bae6fd" opacity="0.6"/><rect x="66" y="52" width="22" height="18" rx="3" fill="#ffffff" stroke="#ef4444" stroke-width="1.5"/><rect x="74" y="49" width="6" height="3" fill="#64748b"/><path d="M75 56 h4 v3 h3 v4 h-3 v3 h-4 v-3 h-3 v-4 h3 Z" fill="#ef4444"/><line x1="88" y1="18" x2="88" y2="82" stroke="#475569" stroke-width="2"/><line x1="86" y1="28" x2="88" y2="28" stroke="#ef4444" stroke-width="1.5"/><line x1="86" y1="38" x2="88" y2="38" stroke="#475569" stroke-width="1.5"/><line x1="86" y1="48" x2="88" y2="48" stroke="#475569" stroke-width="1.5"/><rect x="84" y="80" width="8" height="4" fill="#334155"/><path d="M36 24 C36 34 46 34 46 24" fill="none" stroke="#0284c7" stroke-width="1.5"/><circle cx="41" cy="38" r="3" fill="#94a3b8" stroke="#0284c7" stroke-width="1"/></svg>`,
+      lunchroom: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><rect x="8" y="82" width="84" height="4" rx="2" fill="#cbd5e1"/><rect x="14" y="60" width="72" height="8" rx="2" fill="#ea580c"/><rect x="20" y="68" width="5" height="16" fill="#78350f"/><rect x="75" y="68" width="5" height="16" fill="#78350f"/><rect x="24" y="40" width="52" height="20" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/><ellipse cx="34" cy="50" rx="6" ry="4" fill="#ef4444"/><path d="M33 42 Q34 38 33 34" fill="none" stroke="#94a3b8" stroke-width="1" stroke-linecap="round"/><path d="M36 42 Q37 38 36 34" fill="none" stroke="#94a3b8" stroke-width="1" stroke-linecap="round"/><polygon points="46,36 52,36 53,40 45,40" fill="#3b82f6"/><rect x="45" y="40" width="8" height="13" fill="#ffffff" stroke="#3b82f6" stroke-width="1"/><line x1="48" y1="35" x2="48" y2="32" stroke="#ea580c" stroke-width="1"/><ellipse cx="62" cy="46" rx="6" ry="3.5" fill="#d97706"/><circle cx="65" cy="54" r="3.5" fill="#dc2626"/><polygon points="65,51 67,49 66,51" fill="#15803d"/><line x1="72" y1="44" x2="72" y2="56" stroke="#94a3b8" stroke-width="1.2"/><ellipse cx="72" cy="44" rx="1.5" ry="2" fill="#94a3b8"/></svg>`,
+      restroom: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><rect x="8" y="82" width="84" height="4" rx="2" fill="#cbd5e1"/><circle cx="34" cy="26" r="4.5" fill="#2563eb"/><polygon points="34,32 26,44 42,44" fill="#2563eb"/><rect x="29" y="44" width="4" height="12" rx="1" fill="#2563eb"/><rect x="35" y="44" width="4" height="12" rx="1" fill="#2563eb"/><circle cx="66" cy="26" r="4.5" fill="#e11d48"/><polygon points="66,32 56,48 76,48" fill="#e11d48"/><rect x="61" y="48" width="4" height="10" rx="1" fill="#e11d48"/><rect x="67" y="48" width="4" height="10" rx="1" fill="#e11d48"/><line x1="50" y1="18" x2="50" y2="58" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="3 3"/><rect x="32" y="66" width="36" height="10" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/><path d="M50 66 L50 60 Q50 58 48 58 L46 58" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round"/><circle cx="46" cy="62" r="1.5" fill="#38bdf8"/><rect x="46" y="76" width="8" height="8" fill="#e2e8f0"/></svg>`
     };
     return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(icons[name] || icons.school);
   }
 
-  const DEFAULT_PLACES = [
-    { id: 0, name: "School", image: svgIcon("school", "#2563eb", "#eff6ff") },
-    { id: 1, name: "Park", image: svgIcon("park", "#16a34a", "#f0fdf4") },
-    { id: 2, name: "Hospital", image: svgIcon("hospital", "#dc2626", "#fef2f2") },
-    { id: 3, name: "Library", image: svgIcon("library", "#0891b2", "#ecfeff") },
-    { id: 4, name: "Supermarket", image: svgIcon("supermarket", "#ea580c", "#fff7ed") },
-    { id: 5, name: "Police Station", image: svgIcon("police", "#1d4ed8", "#eff6ff") },
-    { id: 6, name: "Fire Station", image: svgIcon("fire", "#e11d48", "#fff1f2") },
-    { id: 7, name: "Bakery", image: svgIcon("bakery", "#d97706", "#fefce8") },
-    { id: 8, name: "Station", image: svgIcon("station", "#0284c7", "#f0f9ff") },
-    { id: 9, name: "Zoo", image: svgIcon("zoo", "#ca8a04", "#fef9c3") },
-    { id: 10, name: "Playground", image: svgIcon("playground", "#7c3aed", "#ede9fe") },
-    { id: 11, name: "Museum", image: svgIcon("museum", "#9333ea", "#f3e8ff") }
-  ];
+  /* ==========================================================================
+     MODULAR THEMES REGISTRY (Town, School, etc.)
+     ========================================================================== */
+  const THEMES = {
+    town: {
+      id: "town",
+      name: "Town",
+      icon: "location_city",
+      description: "Town map with streets and community buildings",
+      places: [
+        { id: 0, name: "School", image: svgIcon("school", "#2563eb", "#eff6ff") },
+        { id: 1, name: "Park", image: svgIcon("park", "#16a34a", "#f0fdf4") },
+        { id: 2, name: "Hospital", image: svgIcon("hospital", "#dc2626", "#fef2f2") },
+        { id: 3, name: "Library", image: svgIcon("library", "#0891b2", "#ecfeff") },
+        { id: 4, name: "Supermarket", image: svgIcon("supermarket", "#ea580c", "#fff7ed") },
+        { id: 5, name: "Police Station", image: svgIcon("police", "#1d4ed8", "#eff6ff") },
+        { id: 6, name: "Fire Station", image: svgIcon("fire", "#e11d48", "#fff1f2") },
+        { id: 7, name: "Bakery", image: svgIcon("bakery", "#d97706", "#fefce8") },
+        { id: 8, name: "Station", image: svgIcon("station", "#0284c7", "#f0f9ff") },
+        { id: 9, name: "Zoo", image: svgIcon("zoo", "#ca8a04", "#fef9c3") },
+        { id: 10, name: "Playground", image: svgIcon("playground", "#7c3aed", "#ede9fe") },
+        { id: 11, name: "Museum", image: svgIcon("museum", "#9333ea", "#f3e8ff") }
+      ]
+    },
+    school: {
+      id: "school",
+      name: "School",
+      icon: "school",
+      description: "School map with classrooms and school facilities",
+      places: [
+        { id: 0, name: "Classroom", image: svgIcon("classroom", "#2563eb", "#eff6ff") },
+        { id: 1, name: "Science Room", image: svgIcon("scienceroom", "#059669", "#ecfdf5") },
+        { id: 2, name: "Music Room", image: svgIcon("musicroom", "#d97706", "#fefce8") },
+        { id: 3, name: "Art Room", image: svgIcon("artroom", "#db2777", "#fdf2f8") },
+        { id: 4, name: "Gym", image: svgIcon("gym", "#ea580c", "#fff7ed") },
+        { id: 5, name: "Library", image: svgIcon("library", "#0891b2", "#ecfeff") },
+        { id: 6, name: "School Office", image: svgIcon("schooloffice", "#0284c7", "#f0f9ff") },
+        { id: 7, name: "Teachers' Office", image: svgIcon("teachersoffice", "#4f46e5", "#eef2ff") },
+        { id: 8, name: "Principal's Office", image: svgIcon("principalsoffice", "#7c3aed", "#f5f3ff") },
+        { id: 9, name: "Nurse's Office", image: svgIcon("nursesoffice", "#e11d48", "#fff1f2") },
+        { id: 10, name: "Playground", image: svgIcon("playground", "#b45309", "#fef7ed") },
+        { id: 11, name: "Restroom", image: svgIcon("restroom", "#0d9488", "#f0fdfa") }
+      ]
+    }
+  };
+
+  const DEFAULT_PLACES = THEMES.town.places;
 
   // Top-down view of person walking (seen from above)
   function createTopDownPerson(stepRight) {
     const leftFootY = stepRight ? 44 : 22;
     const rightFootY = stepRight ? 22 : 44;
-    const leftHandY = stepRight ? 41 : 23;
-    const rightHandY = stepRight ? 23 : 41;
+    const rightHandY = stepRight ? 41 : 23;
+    const leftHandY = stepRight ? 23 : 41;
     return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <!-- Shoes (solid dark sneakers, viewed from above) -->
@@ -453,13 +529,13 @@
   let stepToggle = false;
 
   /* ==========================================================================
-     2. INDEXEDDB LOCAL PERSISTENCE (Zero Server Upload)
+     2. INDEXEDDB LOCAL PERSISTENCE (Zero Server Upload, Theme-Aware)
      ========================================================================== */
   const DB_NAME = "GettingAroundDB";
-  const DB_VERSION = 1;
+  const DB_VERSION = 2;
   const STORE_PLACES = "places";
 
-  const MapStorage = {
+  const DirectionsStorage = {
     db: null,
     async init() {
       return new Promise((resolve) => {
@@ -467,9 +543,10 @@
         const req = indexedDB.open(DB_NAME, DB_VERSION);
         req.onupgradeneeded = (e) => {
           const db = e.target.result;
-          if (!db.objectStoreNames.contains(STORE_PLACES)) {
-            db.createObjectStore(STORE_PLACES, { keyPath: "id" });
+          if (db.objectStoreNames.contains(STORE_PLACES)) {
+            db.deleteObjectStore(STORE_PLACES);
           }
+          db.createObjectStore(STORE_PLACES, { keyPath: "storageKey" });
         };
         req.onsuccess = (e) => {
           this.db = e.target.result;
@@ -479,27 +556,42 @@
       });
     },
 
-    async savePlace(place) {
+    getStorageKey(placeId, themeId = currentTheme) {
+      return `${themeId}_${placeId}`;
+    },
+
+    async savePlace(place, themeId = currentTheme) {
+      const storageKey = this.getStorageKey(place.id, themeId);
+      const record = { ...place, theme: themeId, storageKey };
       if (this.db) {
         return new Promise((resolve) => {
           try {
             const tx = this.db.transaction(STORE_PLACES, "readwrite");
-            tx.objectStore(STORE_PLACES).put(place);
+            tx.objectStore(STORE_PLACES).put(record);
             tx.oncomplete = () => resolve();
             tx.onerror = () => resolve();
           } catch(e) { resolve(); }
         });
       }
-      try { localStorage.setItem("map_place_" + place.id, JSON.stringify(place)); } catch(e) {}
+      try {
+        localStorage.setItem(`directions_place_${themeId}_${place.id}`, JSON.stringify(record));
+        if (themeId === "town") {
+          localStorage.removeItem(`map_place_${place.id}`);
+        }
+      } catch(e) {}
     },
 
-    async getAllPlaces() {
+    async getAllPlaces(themeId = currentTheme) {
       if (this.db) {
         return new Promise((resolve) => {
           try {
             const tx = this.db.transaction(STORE_PLACES, "readonly");
             const req = tx.objectStore(STORE_PLACES).getAll();
-            req.onsuccess = () => resolve(req.result || []);
+            req.onsuccess = () => {
+              const all = req.result || [];
+              const filtered = all.filter(p => (p.theme || "town") === themeId);
+              resolve(filtered);
+            };
             req.onerror = () => resolve([]);
           } catch(e) { resolve([]); }
         });
@@ -507,29 +599,48 @@
       const list = [];
       for (let i = 0; i < 12; i++) {
         try {
-          const item = localStorage.getItem("map_place_" + i);
+          let item = localStorage.getItem(`directions_place_${themeId}_${i}`);
+          if (!item && themeId === "town") {
+            item = localStorage.getItem(`directions_place_${i}`) || localStorage.getItem(`map_place_${i}`);
+          }
           if (item) list.push(JSON.parse(item));
         } catch(e) {}
       }
       return list;
     },
 
-    async clearAll() {
+    async clearAll(themeId = currentTheme) {
       if (this.db) {
         return new Promise((resolve) => {
           try {
             const tx = this.db.transaction(STORE_PLACES, "readwrite");
-            tx.objectStore(STORE_PLACES).clear();
-            tx.oncomplete = () => resolve();
-            tx.onerror = () => resolve();
+            const store = tx.objectStore(STORE_PLACES);
+            const req = store.getAll();
+            req.onsuccess = () => {
+              const all = req.result || [];
+              all.forEach(item => {
+                if ((item.theme || "town") === themeId) {
+                  store.delete(item.storageKey);
+                }
+              });
+              resolve();
+            };
+            req.onerror = () => resolve();
           } catch(e) { resolve(); }
         });
       }
       for (let i = 0; i < 12; i++) {
-        try { localStorage.removeItem("map_place_" + i); } catch(e) {}
+        try {
+          localStorage.removeItem(`directions_place_${themeId}_${i}`);
+          if (themeId === "town") {
+            localStorage.removeItem(`directions_place_${i}`);
+            localStorage.removeItem(`map_place_${i}`);
+          }
+        } catch(e) {}
       }
     }
   };
+  const MapStorage = DirectionsStorage;
 
   function compressImage(file) {
     return new Promise((resolve, reject) => {
@@ -566,7 +677,8 @@
   /* ==========================================================================
      3. GAME STATE & 7x6 GRID NAVIGATION
      ========================================================================== */
-  let places = JSON.parse(JSON.stringify(DEFAULT_PLACES));
+  let currentTheme = "town";
+  let places = JSON.parse(JSON.stringify(THEMES.town.places));
   let currentMode = "practice"; // 'practice' | 'secret'
   let revealedSecrets = new Set();
   let secretOrder = null;
@@ -751,10 +863,11 @@
           }
         });
         labelEl.addEventListener("blur", async () => {
-          const newName = labelEl.innerText.trim() || DEFAULT_PLACES[placeIndex].name;
+          const defaults = THEMES[currentTheme].places;
+          const newName = labelEl.innerText.trim() || defaults[placeIndex].name;
           labelEl.innerText = newName;
           places[placeIndex].name = newName;
-          await MapStorage.savePlace(places[placeIndex]);
+          await DirectionsStorage.savePlace(places[placeIndex], currentTheme);
         });
       });
 
@@ -778,7 +891,7 @@
       const compressed = await compressImage(file);
       places[index].image = compressed;
       places[index].hasCustomImage = true;
-      await MapStorage.savePlace(places[index]);
+      await DirectionsStorage.savePlace(places[index], currentTheme);
       renderRooms();
       updateMoverVisual();
     } catch(err) {
@@ -788,10 +901,11 @@
 
   async function revertRoomImage(index) {
     try {
-      places[index].image = DEFAULT_PLACES[index].image;
-      places[index].name = DEFAULT_PLACES[index].name;
+      const defaults = THEMES[currentTheme].places;
+      places[index].image = defaults[index].image;
+      places[index].name = defaults[index].name;
       places[index].hasCustomImage = false;
-      await MapStorage.savePlace(places[index]);
+      await DirectionsStorage.savePlace(places[index], currentTheme);
       renderRooms();
       updateMoverVisual();
     } catch(err) {
@@ -1022,7 +1136,7 @@
   function setMode(mode) {
     currentMode = mode;
     const isSecret = (mode === "secret");
-    const switchInput = document.getElementById("mapModeSwitch");
+    const switchInput = document.getElementById("directionsModeSwitch") || document.getElementById("mapModeSwitch");
     if (switchInput) {
       switchInput.checked = isSecret;
     }
@@ -1058,7 +1172,7 @@
     "go straight", "straight", "forward",
     "go straight two blocks", "straight two blocks", "two blocks",
     "go straight three blocks", "three blocks",
-    "restart", "reset", "practice", "secret"
+    "restart", "reset"
   ];
 
   if (recognition) {
@@ -1131,18 +1245,6 @@
       regex: /\b(turn right|right|write)\b/i,
       cooldown: 650,
       action: () => turnRight()
-    },
-    {
-      id: "practice",
-      regex: /\b(practice)\b/i,
-      cooldown: 600,
-      action: () => setMode('practice')
-    },
-    {
-      id: "secret",
-      regex: /\b(secret)\b/i,
-      cooldown: 600,
-      action: () => setMode('secret')
     }
   ];
 
@@ -1261,24 +1363,25 @@
   }
 
   /* ==========================================================================
-     7. SETUP & INITIALIZATION
+     7. SETUP, THEME MANAGEMENT & INITIALIZATION
      ========================================================================== */
-  async function init() {
-    await MapStorage.init();
-    const saved = await MapStorage.getAllPlaces();
+  async function loadPlacesForTheme(themeId) {
+    const themeDef = THEMES[themeId] || THEMES.town;
+    const defaults = themeDef.places;
+    places = defaults.map(p => ({ ...p }));
+
+    const saved = await DirectionsStorage.getAllPlaces(themeId);
     if (saved && saved.length > 0) {
-      const defaultNames = new Set(DEFAULT_PLACES.map(p => p.name));
-      // Detect if storage has scrambled default places from previous shuffle
+      const defaultNames = new Set(defaults.map(p => p.name));
       const isCorrupted = saved.some(item => {
         if (typeof item.id !== "number" || item.id >= 12) return false;
         const isCustom = item.hasCustomImage === true || (item.hasCustomImage !== false && typeof item.image === "string" && !item.image.startsWith("data:image/svg+xml"));
-        return !isCustom && defaultNames.has(item.name) && item.name !== DEFAULT_PLACES[item.id].name;
+        return !isCustom && (!defaultNames.has(item.name) || item.name !== defaults[item.id].name);
       });
 
       if (isCorrupted) {
-        console.warn("Detected scrambled default places from previous shuffle; resetting storage to matching defaults.");
-        await MapStorage.clearAll();
-        // Restore custom ones if any existed
+        console.warn(`Detected scrambled or outdated default places for theme "${themeId}"; resetting storage to matching defaults.`);
+        await DirectionsStorage.clearAll(themeId);
         for (const item of saved) {
           const isCustom = item.hasCustomImage === true || (item.hasCustomImage !== false && typeof item.image === "string" && !item.image.startsWith("data:image/svg+xml"));
           if (isCustom && typeof item.id === "number" && item.id < 12) {
@@ -1288,7 +1391,7 @@
               image: item.image,
               hasCustomImage: true
             };
-            await MapStorage.savePlace(places[item.id]);
+            await DirectionsStorage.savePlace(places[item.id], themeId);
           }
         }
       } else {
@@ -1298,7 +1401,7 @@
             places[item.id] = {
               ...places[item.id],
               name: item.name || places[item.id].name,
-              image: isCustom ? item.image : DEFAULT_PLACES[item.id].image,
+              image: isCustom ? item.image : defaults[item.id].image,
               hasCustomImage: !!isCustom
             };
           }
@@ -1308,6 +1411,70 @@
 
     renderRooms();
     updateMoverVisual();
+  }
+
+  async function setTheme(newTheme) {
+    if (!THEMES[newTheme]) return;
+    currentTheme = newTheme;
+
+    // Apply theme styling to layout and board for hallways vs streets
+    $("#appLayout, #directionsBoard").removeClass("theme-town theme-school").addClass(`theme-${newTheme}`);
+
+    // Update UI radio button
+    const radio = document.getElementById(`themeRadio_${newTheme}`) || document.querySelector(`input[name="theme"][value="${newTheme}"]`);
+    if (radio) radio.checked = true;
+
+    try {
+      localStorage.setItem("directions_active_theme", newTheme);
+    } catch(e) {}
+
+    // Update URL query string
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set("theme", newTheme);
+      window.history.replaceState(null, "", url.toString());
+    } catch(e) {}
+
+    await loadPlacesForTheme(newTheme);
+    reset();
+  }
+
+  async function init() {
+    await DirectionsStorage.init();
+
+    // Determine initial theme from URL or localStorage
+    const urlParams = new URLSearchParams(window.location.search);
+    const themeFromUrl = urlParams.get("theme") || urlParams.get("map");
+    let initialTheme = "town";
+    if (themeFromUrl && THEMES[themeFromUrl.toLowerCase()]) {
+      initialTheme = themeFromUrl.toLowerCase();
+    } else {
+      try {
+        const storedTheme = localStorage.getItem("directions_active_theme");
+        if (storedTheme && THEMES[storedTheme]) {
+          initialTheme = storedTheme;
+        }
+      } catch(e) {}
+    }
+    currentTheme = initialTheme;
+
+    // Check corresponding radio button
+    const activeRadio = document.getElementById(`themeRadio_${currentTheme}`) || document.querySelector(`input[name="theme"][value="${currentTheme}"]`);
+    if (activeRadio) activeRadio.checked = true;
+
+    // Apply theme styling to layout and board
+    $("#appLayout, #directionsBoard").removeClass("theme-town theme-school").addClass(`theme-${currentTheme}`);
+
+    // Load places for initial theme
+    await loadPlacesForTheme(currentTheme);
+
+    // Initial mode from URL or default
+    const modeFromUrl = urlParams.get("mode");
+    if (modeFromUrl === "secret") {
+      setMode("secret");
+    } else {
+      setMode("practice");
+    }
 
     window.addEventListener("resize", updateMoverVisual);
     window.addEventListener("load", updateMoverVisual);
@@ -1318,11 +1485,16 @@
     $("#resetBtn").on("click", reset);
 
     $("form button[type=submit]").hide();
-    $("#mapModeSwitch").on("change", function() {
+    $("#directionsModeSwitch, #mapModeSwitch").on("change", function() {
       setMode(this.checked ? "secret" : "practice");
     });
     $("#labelPractice").on("click", () => setMode("practice"));
     $("#labelSecret").on("click", () => setMode("secret"));
+
+    // Theme radio change handler
+    $("#themeSelectorGroup, form").on("change", 'input[name="theme"]', function() {
+      setTheme(this.value);
+    });
 
     // Keyboard controls
     $(document).on("keydown", (e) => {
@@ -1341,6 +1513,41 @@
         reset();
       }
     });
+
+    // Expose modular API
+    window.DirectionsApp = {
+      THEMES,
+      registerTheme(themeDef) {
+        if (!themeDef || !themeDef.id || !Array.isArray(themeDef.places)) {
+          console.error("Invalid theme definition for DirectionsApp");
+          return;
+        }
+        THEMES[themeDef.id] = themeDef;
+        const group = document.getElementById("themeSelectorGroup");
+        if (group && !document.getElementById(`themeRadio_${themeDef.id}`)) {
+          const radio = document.createElement("input");
+          radio.type = "radio";
+          radio.className = "btn-check";
+          radio.name = "theme";
+          radio.id = `themeRadio_${themeDef.id}`;
+          radio.value = themeDef.id;
+          radio.autocomplete = "off";
+
+          const label = document.createElement("label");
+          label.className = "btn btn-outline-primary py-0 px-2 d-flex align-items-center";
+          label.htmlFor = radio.id;
+          label.title = `${themeDef.name} Map`;
+          label.innerHTML = `<i class="material-icons me-1" style="font-size:16px;">${themeDef.icon || "place"}</i><span>${themeDef.name}</span>`;
+
+          group.appendChild(radio);
+          group.appendChild(label);
+        }
+      },
+      setTheme,
+      setMode,
+      getCurrentTheme: () => currentTheme,
+      getCurrentMode: () => currentMode
+    };
   }
 
   if (document.readyState === "loading") {

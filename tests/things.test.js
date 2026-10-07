@@ -62,7 +62,7 @@ describe('Things Router', () => {
   });
 
   describe('GET /things/:activity', () => {
-    const validActivities = ['room', 'shapes', 'colors', 'supplies', 'snake', 'map'];
+    const validActivities = ['room', 'shapes', 'colors', 'supplies', 'snake', 'directions'];
 
     validActivities.forEach(activity => {
       test(`should render activities/things/${activity} for valid activity`, async () => {
@@ -70,6 +70,12 @@ describe('Things Router', () => {
         expect(response.status).toBe(200);
         expect(app.render).toHaveBeenCalledWith(`activities/things/${activity}`, expect.any(Object), expect.any(Function));
       });
+    });
+
+    test('should redirect /things/map to /things/directions', async () => {
+      const response = await request(app).get('/things/map');
+      expect(response.status).toBe(302);
+      expect(response.header.location).toBe('/things/directions');
     });
 
     test('should return 500/error on invalid activity name', async () => {

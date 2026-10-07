@@ -27,7 +27,10 @@ router.get('/dressup/:type', (req, res)=>{
 
 router.get('/:activity', (req, res)=>{
   try{
-    if ( !["room", "shapes", "colors", "supplies", "snake", "map"].includes(req.params.activity) ){
+    if (req.params.activity === 'map') {
+      return res.redirect('/things/directions');
+    }
+    if ( !["room", "shapes", "colors", "supplies", "snake", "directions"].includes(req.params.activity) ){
       throw '404';
     }
 

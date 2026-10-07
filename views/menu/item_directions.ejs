@@ -72,19 +72,34 @@
 
 <div class="rounded-3 d-flex align-items-center justify-content-between">
   <div class="d-flex align-items-center me-3">
-    <i class="material-icons text-secondary point" data-bs-toggle="modal" data-bs-target="#map_modal" style="cursor:pointer;" title="Activity info">
+    <i class="material-icons text-secondary point" data-bs-toggle="modal" data-bs-target="#directions_modal" style="cursor:pointer;" title="Activity info">
       info
     </i>
     <strong class="text-primary fs-5 ps-2 text-nowrap">DIRECTIONS</strong>
   </div>
 
-  <form id="mapForm" action="/things/map" method="GET" class="menuitem d-flex align-items-center">
+  <form id="directionsForm" action="/things/directions" method="GET" class="menuitem d-flex align-items-center">
+    <!-- Modular Theme Selector: Town / School -->
+    <div class="btn-group btn-group-sm me-3" role="group" id="themeSelectorGroup" aria-label="Map Theme">
+      <input type="radio" class="btn-check" name="theme" id="themeRadio_town" value="town" autocomplete="off" checked>
+      <label class="btn btn-outline-primary py-0 px-2 d-flex align-items-center" for="themeRadio_town" title="Town Map">
+        <i class="material-icons me-1" style="font-size:16px;">location_city</i>
+        <span>Town</span>
+      </label>
+
+      <input type="radio" class="btn-check" name="theme" id="themeRadio_school" value="school" autocomplete="off">
+      <label class="btn btn-outline-primary py-0 px-2 d-flex align-items-center" for="themeRadio_school" title="School Map">
+        <i class="material-icons me-1" style="font-size:16px;">school</i>
+        <span>School</span>
+      </label>
+    </div>
+
     <div class="d-flex align-items-center">
       <span class="mode-switch-text active" id="labelPractice">
         <i class="material-icons align-middle">explore</i>
       </span>
-      <label class="custom-switch" id="mapSwitchLabel" title="Toggle Practice / Secret mode">
-        <input type="checkbox" id="mapModeSwitch" name="mode">
+      <label class="custom-switch" id="directionsSwitchLabel" title="Toggle Practice / Secret mode">
+        <input type="checkbox" id="directionsModeSwitch" name="mode">
         <span class="custom-slider"></span>
       </label>
       <span class="mode-switch-text inactive" id="labelSecret">
@@ -96,25 +111,31 @@
   </form>
 </div>
 
-<div id="map_modal" class="modal fade">
+<div id="directions_modal" class="modal fade">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <strong class="modal-title text-primary fs-5">GETTING AROUND</strong>
+        <strong class="modal-title text-primary fs-5">DIRECTIONS</strong>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <p>A map navigation activity designed for giving and following directions.</p>
-        <p><strong>Controls:</strong></p>
+        <p>A directions navigation activity designed for giving and following directions.</p>
+        <p><strong>Themes:</strong></p>
         <ul>
-          <li><strong>Voice Commands:</strong> "Turn left", "Turn right", "Go straight", "Two blocks", "Three blocks", "On your right", "On your left", "Restart".</li>
-          <li><strong>Keyboard:</strong> Arrow keys (<kbd>&uarr;</kbd>, <kbd>&larr;</kbd>, <kbd>&rarr;</kbd>) or <kbd>W</kbd>, <kbd>A</kbd>, <kbd>D</kbd>. Press <kbd>R</kbd> to restart.</li>
+          <li><strong>Town:</strong> Explore community locations (School, Park, Hospital, Library, Supermarket, Police Station, Fire Station, Bakery, Station, Zoo, Playground, Museum).</li>
+          <li><strong>School:</strong> Navigate school rooms and facilities (Classroom, Science Room, Music Room, Art Room, Gym, Library, School Office, Teachers' Office, Principal's Office, Nurse's Office, Playground, Restroom).</li>
         </ul>
         <hr>
         <p><strong>Modes:</strong></p>
         <ul>
-          <li><strong>Practice:</strong> Buildings display photos and labels. Click or drag-and-drop to customize photos and text.</li>
-          <li><strong>Secret:</strong> Buildings hide numbers 1–12. Listen to directions to discover each secret building in order.</li>
+          <li><strong>Practice:</strong> Buildings and rooms display photos and labels. Click or drag-and-drop to customize photos and text.</li>
+          <li><strong>Secret:</strong> Locations hide numbers 1–12. Listen to directions to discover each secret location in order.</li>
+        </ul>
+        <hr>
+        <p><strong>Controls:</strong></p>
+        <ul>
+          <li><strong>Voice Commands:</strong> "Turn left", "Turn right", "Go straight", "Two blocks", "Three blocks", "On your right", "On your left", "Restart".</li>
+          <li><strong>Keyboard:</strong> Arrow keys (<kbd>&uarr;</kbd>, <kbd>&larr;</kbd>, <kbd>&rarr;</kbd>) or <kbd>W</kbd>, <kbd>A</kbd>, <kbd>D</kbd>. Press <kbd>R</kbd> to restart.</li>
         </ul>
       </div>
     </div>
