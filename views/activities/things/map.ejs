@@ -59,7 +59,7 @@
     white-space: nowrap;
   }
 
-  /* Main Max-Area Playfield with bottom margin so mover is not cut off */
+  /* Main Max-Area Playfield with top & bottom margin so mover is not cut off */
   .main-play-area {
     flex: 1;
     min-width: 0;
@@ -67,7 +67,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0 8px 50px 0;
+    padding: 20px 8px 22px 0;
     box-sizing: border-box;
     overflow: hidden;
   }
@@ -99,22 +99,30 @@
     background-color: #334155;
     padding: 0;
     border: none;
-    border-radius: 8px;
+    border-radius: 0;
     box-sizing: border-box;
     position: relative;
     z-index: 6;
   }
 
-  /* Bottom Street matching 20px width of other streets */
+  /* Top and Bottom Streets matching 20px width of other streets */
+  .top-street,
   .bottom-street {
     height: 20px;
     min-height: 20px;
     width: 100%;
     background-color: #334155;
-    border-radius: 4px;
     box-sizing: border-box;
     position: relative;
     z-index: 6;
+  }
+
+  .top-street {
+    border-radius: 6px 6px 0 0;
+  }
+
+  .bottom-street {
+    border-radius: 0 0 6px 6px;
   }
 
   .room-box {
@@ -286,29 +294,20 @@
   }
 </style>
 
-<div class="d-flex justify-content-between mb-2">
-  <div class="d-flex">
-    <div class="mx-2"><strong class="text-primary fs-5 ps-2">GETTING AROUND</strong></div>
-    <!-- Game Modes -->
-    <div class="btn-group me-2" role="group" aria-label="Game Modes">
-      <button id="modePractice" class="btn btn-sm btn-primary">
-        <i class="material-icons align-middle me-1" style="font-size:16px;">explore</i>Practice
-      </button>
-      <button id="modeSecret" class="btn btn-sm btn-outline-primary">
-        <i class="material-icons align-middle me-1" style="font-size:16px;">help_outline</i>Secret
-      </button>
-    </div>
+<div class="d-flex align-items-center mb-2" style="position:relative;">
+  <%- include('../../menu/item_map'); -%>
 
-    <!-- Actions -->
-    <button id="resetBtn" class="btn btn-sm btn-outline-secondary">
-      <i class="material-icons me-1" style="font-size:16px;">restart_alt</i>
-      <span>Restart</span>
-    </button>
-
-  </div>
-  <button id="home" class="btn btn-sm btn-outline-secondary p-0" onclick="location.href='/'" aria-label="Home">
-    <i class="material-icons">home</i>
+  <!-- Actions -->
+  <button id="resetBtn" class="btn btn-sm btn-outline-secondary py-0 mx-3 d-flex align-items-center">
+    <i class="material-icons me-1" style="font-size:16px;">restart_alt</i>
+    <span>Restart</span>
   </button>
+
+  <div style="position:absolute;right:0;">
+    <button id="home" class="btn btn-sm btn-outline-secondary p-0" onclick="location.href='/'" aria-label="Home">
+      <i class="material-icons">home</i>
+    </button>
+  </div>
 </div>
 
 <div class="app-layout pt-1" id="appLayout">
@@ -342,6 +341,7 @@
     <line id="vLine2" stroke="#facc15" stroke-width="2.5" stroke-dasharray="8 6" stroke-linecap="round" />
     <line id="vLine3" stroke="#facc15" stroke-width="2.5" stroke-dasharray="8 6" stroke-linecap="round" />
     <!-- Horizontal street centerlines -->
+    <line id="hLine0" stroke="#facc15" stroke-width="2.5" stroke-dasharray="8 6" stroke-linecap="round" />
     <line id="hLine1" stroke="#facc15" stroke-width="2.5" stroke-dasharray="8 6" stroke-linecap="round" />
     <line id="hLine2" stroke="#facc15" stroke-width="2.5" stroke-dasharray="8 6" stroke-linecap="round" />
     <line id="hLine3" stroke="#facc15" stroke-width="2.5" stroke-dasharray="8 6" stroke-linecap="round" />
@@ -350,6 +350,7 @@
   <!-- Maximum Area Playfield taking 100% view height -->
   <main class="main-play-area">
     <div class="map-board" id="mapBoard">
+      <div class="top-street" id="topStreet"></div>
       <div class="rooms-grid" id="roomsGrid">
         <!-- 12 Rooms generated dynamically -->
       </div>
@@ -570,8 +571,8 @@
   let revealedSecrets = new Set();
   let secretOrder = null;
 
-  // Mover position (38 = starting space under controls on left, aligned one street up)
-  let moverPosition = 38;
+  // Mover position ("start" = starting space under controls on left, aligned with street H2)
+  let moverPosition = "start";
   let moverAngle = 90; // Cumulative angle in degrees (0 = north, 90 = east, 180 = south, 270 = west)
 
   function getMoverDir() {
@@ -586,26 +587,29 @@
   // Entry door cells on the streets
   // Moving North: enters room above
   const entryNorthObj = {
-    0: 0,  2: 1,  4: 2,  6: 3,
-    14: 4, 16: 5, 18: 6, 20: 7,
-    28: 8, 30: 9, 32: 10, 34: 11
+    14: 0, 16: 1, 18: 2, 20: 3,  // From Street H1 into Rooms 0..3
+    28: 4, 30: 5, 32: 6, 34: 7,  // From Street H2 into Rooms 4..7
+    42: 8, 44: 9, 46: 10, 48: 11 // From Bottom Street into Rooms 8..11
   };
   const entryObj = entryNorthObj;
 
   // Moving South: enters room below
   const entrySouthObj = {
-    0: 4,  2: 5,  4: 6,  6: 7,
-    14: 8, 16: 9, 18: 10, 20: 11
+    0: 0,  2: 1,  4: 2,  6: 3,   // From Top Street into Rooms 0..3
+    14: 4, 16: 5, 18: 6, 20: 7,  // From Street H1 into Rooms 4..7
+    28: 8, 30: 9, 32: 10, 34: 11 // From Street H2 into Rooms 8..11
   };
 
-  // Navigable cells
+  // Navigable cells in 7x7 grid (rows 0 to 6)
   const canMoveCells = new Set([
-    0,1,2,3,4,5,6,
-    8,10,12,
-    14,15,16,17,18,19,20,
-    22,24,26,
-    28,29,30,31,32,33,34,
-    38
+    0, 1, 2, 3, 4, 5, 6,        // Row 0: Top Street
+    8, 10, 12,                  // Row 1: Alleys between Rooms 0..3
+    14, 15, 16, 17, 18, 19, 20, // Row 2: Street H1
+    22, 24, 26,                 // Row 3: Alleys between Rooms 4..7
+    28, 29, 30, 31, 32, 33, 34, // Row 4: Street H2
+    36, 38, 40,                 // Row 5: Alleys between Rooms 8..11
+    42, 43, 44, 45, 46, 47, 48, // Row 6: Bottom Street
+    "start", 50
   ]);
 
 
@@ -805,8 +809,8 @@
   }
 
   function updateStreetLines(layoutRect, colXMap, rowYMap, b0, b3, b8) {
-    const topY = b0.top - layoutRect.top;
-    const bottomY = rowYMap[4];
+    const topY = rowYMap[0];
+    const bottomY = rowYMap[6];
     const rightEdge = b3.right - layoutRect.left;
     const leftBoardEdge = b0.left - layoutRect.left;
 
@@ -816,11 +820,10 @@
     setLine("vLine3", colXMap[5], topY, colXMap[5], bottomY);
 
     // Horizontal dashed street centerlines
-    setLine("hLine1", leftBoardEdge, rowYMap[0], rightEdge, rowYMap[0]);
-    setLine("hLine2", leftBoardEdge, rowYMap[2], rightEdge, rowYMap[2]);
-
-    // Bottom street: starts at left board edge where the bottom street begins
-    setLine("hLine3", leftBoardEdge, bottomY, rightEdge, bottomY);
+    setLine("hLine0", leftBoardEdge, rowYMap[0], rightEdge, rowYMap[0]);
+    setLine("hLine1", leftBoardEdge, rowYMap[2], rightEdge, rowYMap[2]);
+    setLine("hLine2", leftBoardEdge, rowYMap[4], rightEdge, rowYMap[4]);
+    setLine("hLine3", leftBoardEdge, rowYMap[6], rightEdge, rowYMap[6]);
   }
 
   function updateMoverVisual() {
@@ -854,27 +857,36 @@
       (b3.left + b3.width / 2) - layoutRect.left
     ];
 
-    // 5 row positions relative to layout
+    const topStreetEl = document.getElementById("topStreet");
+    const topStreetRect = topStreetEl ? topStreetEl.getBoundingClientRect() : null;
+    const topStreetY = topStreetRect ? (topStreetRect.top + topStreetRect.height / 2 - layoutRect.top) : ((b0.top - layoutRect.top) - 10);
+
+    const bottomStreetEl = document.getElementById("bottomStreet");
+    const bottomStreetRect = bottomStreetEl ? bottomStreetEl.getBoundingClientRect() : null;
+    const bottomStreetY = bottomStreetRect ? (bottomStreetRect.top + bottomStreetRect.height / 2 - layoutRect.top) : ((b8.bottom - layoutRect.top) + 10);
+
     const streetH1 = ((b0.bottom + b4.top) / 2) - layoutRect.top;
     const streetH2 = ((b4.bottom + b8.top) / 2) - layoutRect.top;
-    const bottomStreetY = (b8.bottom - layoutRect.top) + 10;
 
+    // 7 row positions relative to layout (Rows 0 to 6)
     const rowYMap = [
-      streetH1,
-      ((b4.top + b4.height / 2) - layoutRect.top),
-      streetH2,
-      ((b8.top + b8.height / 2) - layoutRect.top),
-      bottomStreetY
+      topStreetY,                                  // Row 0: Top Street
+      ((b0.top + b0.height / 2) - layoutRect.top), // Row 1: Alleys between Rooms 0..3
+      streetH1,                                    // Row 2: Street H1
+      ((b4.top + b4.height / 2) - layoutRect.top), // Row 3: Alleys between Rooms 4..7
+      streetH2,                                    // Row 4: Street H2
+      ((b8.top + b8.height / 2) - layoutRect.top), // Row 5: Alleys between Rooms 8..11
+      bottomStreetY                                // Row 6: Bottom Street
     ];
 
     let colX = 0;
     let rowY = 0;
 
-    if (moverPosition === 38 || moverPosition === "start") {
+    if (moverPosition === 50 || moverPosition === "start") {
       const sideControls = document.querySelector(".side-controls");
       const sideRect = sideControls ? sideControls.getBoundingClientRect() : { left: 0, width: 105 };
       colX = (sideRect.left - layoutRect.left) + sideRect.width / 2;
-      rowY = streetH2;
+      rowY = streetH2; // Aligned with streetH2 (Row 4)
     } else {
       const col = moverPosition % 7;
       const row = Math.floor(moverPosition / 7);
@@ -920,9 +932,9 @@
 
   function goStraight() {
     const moverDir = getMoverDir();
-    if (moverPosition === 38 || moverPosition === "start") {
+    if (moverPosition === 50 || moverPosition === "start") {
       if (moverDir === "east") {
-        moverPosition = 14;
+        moverPosition = 28; // Enters streetH2 (Row 4, Col 0)
         stepWalk();
         updateMoverVisual();
       }
@@ -945,7 +957,7 @@
         enterRoom(entrySouthObj[moverPosition]);
         return;
       }
-      if (moverPosition + 14 < 35 && canMoveCells.has(moverPosition + 14) && entrySouthObj[moverPosition] === undefined) {
+      if (moverPosition + 14 < 49 && canMoveCells.has(moverPosition + 14)) {
         moverPosition += 14;
         stepWalk();
         updateMoverVisual();
@@ -959,8 +971,8 @@
         return;
       }
     } else if (moverDir === "west") {
-      if (moverPosition === 14) {
-        moverPosition = 38;
+      if (moverPosition === 28) {
+        moverPosition = "start";
         stepWalk();
         updateMoverVisual();
         return;
@@ -979,7 +991,7 @@
       clearInterval(walkTimer);
       walkTimer = null;
     }
-    moverPosition = 38;
+    moverPosition = "start";
     moverAngle = 90;
     stepToggle = false;
     moverImgEl.src = personSvg1;
@@ -1009,15 +1021,20 @@
 
   function setMode(mode) {
     currentMode = mode;
-    $("#modePractice, #modeSecret").removeClass("btn-primary").addClass("btn-outline-primary");
-    if (mode === "practice") {
-      $("#modePractice").removeClass("btn-outline-primary").addClass("btn-primary");
-      secretOrder = null;
+    const isSecret = (mode === "secret");
+    const switchInput = document.getElementById("mapModeSwitch");
+    if (switchInput) {
+      switchInput.checked = isSecret;
     }
-    if (mode === "secret") {
-      $("#modeSecret").removeClass("btn-outline-primary").addClass("btn-primary");
+    if (isSecret) {
+      $("#labelPractice").removeClass("active").addClass("inactive");
+      $("#labelSecret").removeClass("inactive").addClass("active");
       revealedSecrets.clear();
       secretOrder = [0,1,2,3,4,5,6,7,8,9,10,11].sort(() => 0.5 - Math.random());
+    } else {
+      $("#labelPractice").removeClass("inactive").addClass("active");
+      $("#labelSecret").removeClass("active").addClass("inactive");
+      secretOrder = null;
     }
     renderRooms();
     reset();
@@ -1300,8 +1317,12 @@
     $("#stop").on("click", stopListening);
     $("#resetBtn").on("click", reset);
 
-    $("#modePractice").on("click", () => setMode("practice"));
-    $("#modeSecret").on("click", () => setMode("secret"));
+    $("form button[type=submit]").hide();
+    $("#mapModeSwitch").on("change", function() {
+      setMode(this.checked ? "secret" : "practice");
+    });
+    $("#labelPractice").on("click", () => setMode("practice"));
+    $("#labelSecret").on("click", () => setMode("secret"));
 
     // Keyboard controls
     $(document).on("keydown", (e) => {

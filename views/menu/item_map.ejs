@@ -1,0 +1,122 @@
+<style>
+  .custom-switch {
+    position: relative;
+    display: inline-block;
+    width: 38px;
+    height: 22px;
+    vertical-align: middle;
+  }
+
+  .custom-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .custom-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #0d6efd;
+    border-radius: 22px;
+    transition: background 0.2s;
+  }
+
+  .custom-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 2px;
+    bottom: 2px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+  }
+
+  .custom-switch input:checked+.custom-slider:before {
+    transform: translateX(16px);
+  }
+
+  .custom-switch.disabled .custom-slider {
+    background: #adb5bd;
+    cursor: not-allowed;
+  }
+
+  .custom-switch.disabled input {
+    pointer-events: none;
+  }
+
+  .mode-switch-text {
+    font-size: 0.95rem;
+    font-weight: 600;
+    user-select: none;
+    cursor: pointer;
+    transition: color 0.15s;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .mode-switch-text.active {
+    color: #0d6efd;
+  }
+
+  .mode-switch-text.inactive {
+    color: #6c757d;
+  }
+</style>
+
+<div class="rounded-3 d-flex align-items-center justify-content-between">
+  <div class="d-flex align-items-center me-3">
+    <i class="material-icons text-secondary point" data-bs-toggle="modal" data-bs-target="#map_modal" style="cursor:pointer;" title="Activity info">
+      info
+    </i>
+    <strong class="text-primary fs-5 ps-2 text-nowrap">DIRECTIONS</strong>
+  </div>
+
+  <form id="mapForm" action="/things/map" method="GET" class="menuitem d-flex align-items-center">
+    <div class="d-flex align-items-center">
+      <span class="mode-switch-text active" id="labelPractice">
+        <i class="material-icons align-middle">explore</i>
+      </span>
+      <label class="custom-switch" id="mapSwitchLabel" title="Toggle Practice / Secret mode">
+        <input type="checkbox" id="mapModeSwitch" name="mode">
+        <span class="custom-slider"></span>
+      </label>
+      <span class="mode-switch-text inactive" id="labelSecret">
+        <i class="material-icons align-middle">help_outline</i>
+      </span>
+    </div>
+
+    <button type="submit" class="btn btn-sm btn-primary ms-3" style="height:100%;">Start</button>
+  </form>
+</div>
+
+<div id="map_modal" class="modal fade">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <strong class="modal-title text-primary fs-5">GETTING AROUND</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>A map navigation activity designed for giving and following directions.</p>
+        <p><strong>Controls:</strong></p>
+        <ul>
+          <li><strong>Voice Commands:</strong> "Turn left", "Turn right", "Go straight", "Two blocks", "Three blocks", "On your right", "On your left", "Restart".</li>
+          <li><strong>Keyboard:</strong> Arrow keys (<kbd>&uarr;</kbd>, <kbd>&larr;</kbd>, <kbd>&rarr;</kbd>) or <kbd>W</kbd>, <kbd>A</kbd>, <kbd>D</kbd>. Press <kbd>R</kbd> to restart.</li>
+        </ul>
+        <hr>
+        <p><strong>Modes:</strong></p>
+        <ul>
+          <li><strong>Practice:</strong> Buildings display photos and labels. Click or drag-and-drop to customize photos and text.</li>
+          <li><strong>Secret:</strong> Buildings hide numbers 1–12. Listen to directions to discover each secret building in order.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
