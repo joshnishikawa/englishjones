@@ -1,0 +1,328 @@
+/* ==========================================================================
+   Directions Activity Styles (Town & School)
+   ========================================================================== */
+
+html, body {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.mic-listening {
+  animation: mic-pulse 1.5s infinite;
+  box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+}
+@keyframes mic-pulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+  70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(40, 167, 69, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+}
+
+/* Full Screen Flex Layout below header */
+.app-layout {
+  display: flex;
+  height: 100vh;
+  min-height: 100vh;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  gap: 8px;
+  position: relative;
+  box-sizing: border-box;
+}
+
+/* Side Controls Panel */
+.side-controls {
+  width: 105px;
+  min-width: 105px;
+  height: 100%;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  padding: 0 0 0 8px;
+  gap: 6px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  z-index: 30;
+}
+
+.side-controls .btn {
+  font-size: 0.75rem;
+  padding: 3px 4px;
+  white-space: nowrap;
+}
+
+/* Main Max-Area Playfield */
+.main-play-area {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 8px 22px 0;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* Board Container */
+.directions-board {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  box-sizing: border-box;
+}
+
+/* 4x3 Rooms Grid with street gaps between blocks (Town: asphalt #334155) */
+.rooms-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  width: 100%;
+  min-width: 0;
+  flex: 1;
+  min-height: 0;
+  background-color: #334155;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 6;
+}
+
+/* Top and Bottom Streets (Town: asphalt #334155) */
+.top-street,
+.bottom-street {
+  height: 20px;
+  min-height: 20px;
+  width: 100%;
+  background-color: #334155;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 6;
+}
+
+.top-street {
+  border-radius: 6px 6px 0 0;
+}
+
+.bottom-street {
+  border-radius: 0 0 6px 6px;
+}
+
+/* School Theme Hallway Styling (Warm tile floors, border trims) */
+.theme-school .rooms-grid,
+.theme-school .top-street,
+.theme-school .bottom-street {
+  background-color: #dfd5c6;
+  background-image: 
+    linear-gradient(90deg, rgba(140, 110, 85, 0.16) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(140, 110, 85, 0.10) 1px, transparent 1px);
+  background-size: 28px 28px;
+  box-shadow: inset 0 0 10px rgba(90, 68, 45, 0.12);
+}
+
+.theme-school .top-street {
+  border-bottom: 2px solid #b8a692;
+  border-radius: 6px 6px 0 0;
+}
+
+.theme-school .bottom-street {
+  border-top: 2px solid #b8a692;
+  border-radius: 0 0 6px 6px;
+}
+
+/* Room / Building Card */
+.room-box {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #ffffff;
+  border: 3px solid #cbd5e1;
+  border-radius: 8px;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+  padding: 4px;
+  perspective: 800px;
+  cursor: pointer;
+  transition: background-color 0.2s, box-shadow 0.2s, border-color 0.2s;
+  box-sizing: border-box;
+  overflow: hidden;
+  z-index: 9;
+}
+
+.room-box.drag-over {
+  outline: 3px dashed #2563eb !important;
+  background-color: #eff6ff !important;
+}
+
+.room-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.room-box.is-flipped .room-inner {
+  transform: rotateY(180deg);
+}
+
+.room-box.highlight {
+  background-color: #fef08a !important;
+  transition: background-color 0.3s;
+}
+
+.room-front, .room-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.room-back {
+  transform: rotateY(180deg);
+}
+
+.room-img {
+  max-height: 72%;
+  max-width: 85%;
+  object-fit: contain;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+.room-img:hover {
+  transform: scale(1.05);
+}
+
+.room-label {
+  font-size: clamp(0.75rem, 1.8vh, 1.15rem);
+  font-weight: 700;
+  color: #1e293b;
+  margin-top: 4px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  outline: none;
+  border: 1px solid transparent;
+  cursor: text;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 95%;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+.room-label:hover {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+}
+.room-label:focus {
+  background-color: #ffffff;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Room hover action buttons */
+.room-actions {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.15s ease-in-out;
+  z-index: 10;
+}
+.room-box:hover .room-actions {
+  opacity: 1;
+}
+.room-action-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: background-color 0.15s, transform 0.15s;
+}
+.room-action-btn:hover {
+  transform: scale(1.1);
+}
+.room-action-btn.img-upload-btn:hover {
+  background: #2563eb;
+}
+.room-action-btn.img-revert-btn {
+  background: rgba(220, 38, 38, 0.65);
+}
+.room-action-btn.img-revert-btn:hover {
+  background: #dc2626;
+}
+
+.secret-number {
+  font-size: clamp(2rem, 7vh, 4.5rem);
+  font-weight: 800;
+  color: #2563eb;
+}
+
+/* Mover Avatar */
+.mover-avatar {
+  position: absolute;
+  width: 90px;
+  height: 90px;
+  transform: translate(-50%, -50%);
+  transition: left 0.35s ease-in-out, top 0.35s ease-in-out;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.mover-avatar.mover-blocked {
+  animation: moverBlockedBump 0.22s ease-in-out;
+}
+
+@keyframes moverBlockedBump {
+  0% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.15); filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.7)); }
+  100% { transform: translate(-50%, -50%) scale(1); }
+}
+
+.mover-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform 0.2s ease-out;
+}

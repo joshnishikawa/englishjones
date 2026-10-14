@@ -1,0 +1,864 @@
+<%- include('../../head') %>
+<link rel="stylesheet" href="/stylesheets/directions.css">
+
+<div class="d-flex align-items-center mb-2" style="position:relative;">
+  <%- include('../../menu/item_school'); -%>
+
+  <!-- Actions -->
+  <button id="resetBtn" class="btn btn-sm btn-outline-secondary py-0 mx-3 d-flex align-items-center">
+    <i class="material-icons me-1" style="font-size:16px;">restart_alt</i>
+    <span>Restart</span>
+  </button>
+
+  <div style="position:absolute;right:0;">
+    <button id="home" class="btn btn-sm btn-outline-secondary p-0" onclick="location.href='/'" aria-label="Home">
+      <i class="material-icons">home</i>
+    </button>
+  </div>
+</div>
+
+<div class="app-layout theme-school pt-1" id="appLayout">
+  <!-- Side Controls Panel -->
+  <aside class="side-controls">
+    <!-- Voice Control Section -->
+    <div class="d-grid gap-1">
+      <button id="listen" class="btn btn-sm btn-success d-flex align-items-center justify-content-center">
+        <i class="material-icons me-1" style="font-size:15px;">record_voice_over</i>
+        <span>Start Voice</span>
+      </button>
+      <button id="stop" class="btn btn-sm btn-secondary d-flex align-items-center justify-content-center" disabled>
+        <i class="material-icons me-1" style="font-size:15px;">stop</i>
+        <span>Stop Voice</span>
+      </button>
+    </div>
+
+    <div id="speechTranscript" class="text-muted small fw-bold text-center px-1" style="min-height: 24px; font-size: 0.72rem; line-height: 1.2;">
+      Voice ready
+    </div>
+
+    <div id="unsupportedAlert" class="alert alert-warning text-center py-1 px-1 small mt-auto mb-0" style="font-size:0.7rem; display:none;">
+      Speech recognition not supported.
+    </div>
+  </aside>
+
+  <!-- Maximum Area Playfield -->
+  <main class="main-play-area">
+    <div class="directions-board" id="directionsBoard">
+      <div class="top-street" id="topStreet"></div>
+      <div class="rooms-grid" id="roomsGrid">
+        <!-- 12 School Rooms generated dynamically -->
+      </div>
+      <div class="bottom-street" id="bottomStreet"></div>
+    </div>
+  </main>
+
+  <!-- Mover Character -->
+  <div id="moverAvatar" class="mover-avatar">
+    <img id="moverImg" src="" alt="mover">
+  </div>
+</div>
+
+<script src="/javascripts/speech_controller.js"></script>
+<script>
+(function() {
+  'use strict';
+
+  /* ==========================================================================
+     1. SCHOOL SVG ILLUSTRATIONS
+     ========================================================================== */
+  function svgIcon(name, color, bg) {
+    const icons = {
+      classroom: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><rect x="8" y="82" width="84" height="4" rx="2" fill="#cbd5e1"/><rect x="14" y="16" width="72" height="42" rx="3" fill="#15803d" stroke="#78350f" stroke-width="2.5"/><rect x="16" y="55" width="68" height="3" fill="#92400e"/><text x="24" y="33" font-family="sans-serif" font-weight="900" font-size="10" fill="#ffffff" letter-spacing="1">ABC</text><text x="24" y="47" font-family="sans-serif" font-weight="700" font-size="8.5" fill="#fde047">1 + 2 = 3</text><circle cx="70" cy="34" r="6" fill="none" stroke="#f472b6" stroke-width="1.8"/><polygon points="68,26 72,26 70,22" fill="#4ade80"/><circle cx="50" cy="11" r="5.5" fill="#ffffff" stroke="#64748b" stroke-width="1.2"/><line x1="50" y1="11" x2="50" y2="8" stroke="#1e293b" stroke-width="1"/><line x1="50" y1="11" x2="53" y2="11" stroke="#1e293b" stroke-width="1"/><rect x="18" y="66" width="28" height="15" rx="2" fill="#d97706"/><rect x="22" y="77" width="3" height="9" fill="#475569"/><rect x="41" y="77" width="3" height="9" fill="#475569"/><rect x="24" y="68" width="10" height="7" rx="1" fill="#38bdf8"/><rect x="54" y="66" width="28" height="15" rx="2" fill="#d97706"/><rect x="58" y="77" width="3" height="9" fill="#475569"/><rect x="77" y="77" width="3" height="9" fill="#475569"/><rect x="60" y="68" width="10" height="7" rx="1" fill="#ef4444"/></svg>`,
+      scienceroom: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><rect x="8" y="80" width="84" height="4" rx="2" fill="#cbd5e1"/><rect x="12" y="60" width="76" height="6" rx="1" fill="#334155"/><rect x="16" y="66" width="6" height="16" fill="#64748b"/><rect x="78" y="66" width="6" height="16" fill="#64748b"/><polygon points="26,58 38,58 35,42 35,32 29,32 29,42" fill="#67e8f9" opacity="0.4"/><polygon points="26,58 38,58 35,42 29,42" fill="#10b981"/><path d="M26 58 L38 58 L35 42 L35 32 L29 32 L29 42 Z" fill="none" stroke="#0f766e" stroke-width="1.5" stroke-linejoin="round"/><circle cx="31" cy="48" r="1.5" fill="#ffffff" opacity="0.8"/><circle cx="34" cy="52" r="1.2" fill="#ffffff" opacity="0.8"/><circle cx="30" cy="54" r="1.8" fill="#ffffff" opacity="0.8"/><rect x="42" y="44" width="22" height="16" rx="1" fill="#fed7aa" stroke="#c2410c" stroke-width="1"/><rect x="45" y="34" width="3.5" height="16" rx="1.5" fill="#ef4444"/><rect x="51" y="30" width="3.5" height="20" rx="1.5" fill="#3b82f6"/><rect x="57" y="36" width="3.5" height="14" rx="1.5" fill="#facc15"/><path d="M72 58 L84 58 L80 54 L76 54 Z" fill="#334155"/><path d="M78 54 C78 44 86 42 84 32" fill="none" stroke="#334155" stroke-width="3" stroke-linecap="round"/><rect x="70" y="30" width="12" height="6" rx="1" transform="rotate(-30 76 33)" fill="#0284c7"/><circle cx="78" cy="46" r="3" fill="#94a3b8"/><circle cx="24" cy="18" r="3.5" fill="#3b82f6"/><circle cx="36" cy="22" r="3" fill="#ef4444"/><line x1="24" y1="18" x2="36" y2="22" stroke="#94a3b8" stroke-width="1.5"/><circle cx="30" cy="12" r="2.5" fill="#10b981"/><line x1="24" y1="18" x2="30" y2="12" stroke="#94a3b8" stroke-width="1.5"/></svg>`,
+      musicroom: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><rect x="8" y="82" width="84" height="4" rx="2" fill="#cbd5e1"/><path d="M16 46 Q16 32 36 30 Q54 28 66 38 L66 66 L16 66 Z" fill="#1e293b"/><polygon points="16,46 44,18 46,19 20,48" fill="#0f172a"/><line x1="42" y1="20" x2="48" y2="38" stroke="#d97706" stroke-width="1.8"/><rect x="18" y="66" width="4" height="18" rx="1" fill="#0f172a"/><rect x="62" y="66" width="4" height="18" rx="1" fill="#0f172a"/><rect x="14" y="60" width="54" height="8" rx="1" fill="#ffffff" stroke="#334155" stroke-width="1"/><rect x="18" y="60" width="2.5" height="5" fill="#0f172a"/><rect x="23" y="60" width="2.5" height="5" fill="#0f172a"/><rect x="30" y="60" width="2.5" height="5" fill="#0f172a"/><rect x="35" y="60" width="2.5" height="5" fill="#0f172a"/><rect x="40" y="60" width="2.5" height="5" fill="#0f172a"/><rect x="47" y="60" width="2.5" height="5" fill="#0f172a"/><rect x="52" y="60" width="2.5" height="5" fill="#0f172a"/><rect x="59" y="60" width="2.5" height="5" fill="#0f172a"/><polygon points="76,62 82,50 86,50 80,62" fill="#78350f"/><rect x="74" y="44" width="16" height="12" rx="1" fill="#ffffff" stroke="#cbd5e1" stroke-width="0.8"/><line x1="76" y1="48" x2="88" y2="48" stroke="#334155" stroke-width="0.8"/><line x1="76" y1="51" x2="88" y2="51" stroke="#334155" stroke-width="0.8"/><line x1="78" y1="62" x2="78" y2="82" stroke="#475569" stroke-width="2"/><circle cx="68" cy="18" r="3" fill="#d97706"/><line x1="71" y1="18" x2="71" y2="8" stroke="#d97706" stroke-width="1.8"/><circle cx="80" cy="14" r="3" fill="#d97706"/><line x1="83" y1="14" x2="83" y2="6" stroke="#d97706" stroke-width="1.8"/><line x1="71" y1="8" x2="83" y2="6" stroke="#d97706" stroke-width="2.5"/></svg>`,
+      artroom: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><rect x="8" y="82" width="84" height="4" rx="2" fill="#cbd5e1"/><line x1="28" y1="18" x2="16" y2="82" stroke="#92400e" stroke-width="3" stroke-linecap="round"/><line x1="38" y1="18" x2="50" y2="82" stroke="#92400e" stroke-width="3" stroke-linecap="round"/><line x1="33" y1="18" x2="33" y2="82" stroke="#78350f" stroke-width="2.5" stroke-linecap="round"/><rect x="18" y="26" width="30" height="34" rx="2" fill="#ffffff" stroke="#d97706" stroke-width="1.5"/><circle cx="26" cy="36" r="4.5" fill="#facc15"/><polygon points="18,60 28,44 38,60" fill="#15803d"/><polygon points="30,60 38,48 48,60" fill="#22c55e"/><rect x="14" y="58" width="38" height="3" rx="1" fill="#78350f"/><ellipse cx="72" cy="56" rx="18" ry="14" fill="#fde68a" stroke="#d97706" stroke-width="1.2"/><circle cx="82" cy="56" r="3.5" fill="#fdf2f8"/><circle cx="62" cy="52" r="3" fill="#ef4444"/><circle cx="68" cy="47" r="3" fill="#3b82f6"/><circle cx="76" cy="49" r="3" fill="#10b981"/><circle cx="62" cy="60" r="3" fill="#f59e0b"/><circle cx="70" cy="64" r="3" fill="#8b5cf6"/><line x1="60" y1="78" x2="84" y2="38" stroke="#78350f" stroke-width="2" stroke-linecap="round"/><polygon points="84,38 86,34 82,36" fill="#ef4444"/></svg>`,
+      gym: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><rect x="10" y="70" width="80" height="18" rx="2" fill="#fed7aa"/><line x1="10" y1="78" x2="90" y2="78" stroke="#ea580c" stroke-width="1.2"/><ellipse cx="50" cy="78" rx="16" ry="6" fill="none" stroke="#ea580c" stroke-width="1.2"/><rect x="16" y="16" width="32" height="24" rx="2" fill="#ffffff" stroke="#dc2626" stroke-width="2"/><rect x="24" y="24" width="16" height="12" fill="none" stroke="#dc2626" stroke-width="1.5"/><rect x="27" y="36" width="10" height="2" fill="#ea580c"/><polygon points="28,38 36,38 34,48 30,48" fill="none" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="2 1.5"/><line x1="16" y1="28" x2="8" y2="28" stroke="#64748b" stroke-width="3"/><line x1="8" y1="28" x2="8" y2="76" stroke="#64748b" stroke-width="3.5"/><circle cx="68" cy="46" r="10" fill="#f97316" stroke="#c2410c" stroke-width="1.2"/><line x1="58" y1="46" x2="78" y2="46" stroke="#431407" stroke-width="1"/><line x1="68" y1="36" x2="68" y2="56" stroke="#431407" stroke-width="1"/><ellipse cx="68" cy="46" rx="5" ry="9" fill="none" stroke="#431407" stroke-width="0.9"/><path d="M68 60 Q66 68 62 70" fill="none" stroke="#f97316" stroke-width="1.2" stroke-dasharray="2 2"/></svg>`,
+      library: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><rect x="16" y="14" width="68" height="28" rx="2" fill="#e0f2fe" opacity="0.6"/><line x1="16" y1="28" x2="84" y2="28" stroke="#0891b2" stroke-width="1.5" opacity="0.4"/><rect x="20" y="17" width="4" height="11" fill="#ef4444" opacity="0.7"/><rect x="25" y="16" width="5" height="12" fill="#3b82f6" opacity="0.7"/><rect x="31" y="18" width="4" height="10" fill="#10b981" opacity="0.7"/><rect x="36" y="16" width="5" height="12" fill="#f59e0b" opacity="0.7"/><rect x="42" y="17" width="4" height="11" fill="#8b5cf6" opacity="0.7"/><rect x="62" y="16" width="5" height="12" fill="#ec4899" opacity="0.7"/><rect x="68" y="18" width="4" height="10" fill="#0284c7" opacity="0.7"/><rect x="73" y="16" width="5" height="12" fill="#f97316" opacity="0.7"/><rect x="10" y="74" width="80" height="5" rx="1" fill="#78350f"/><rect x="14" y="79" width="72" height="4" fill="#92400e"/><rect x="16" y="68" width="28" height="6" rx="1" fill="#1e3a8a"/><rect x="42" y="69" width="2" height="4" fill="#f8fafc"/><rect x="18" y="62" width="24" height="6" rx="1" fill="#dc2626"/><line x1="20" y1="65" x2="38" y2="65" stroke="#fef08a" stroke-width="0.8"/><rect x="19" y="56" width="21" height="6" rx="1" fill="#15803d"/><line x1="22" y1="59" x2="36" y2="59" stroke="#fde047" stroke-width="0.8"/><path d="M 44 71 Q 62 67 84 71 L 84 57 Q 62 53 44 57 Z" fill="#0369a1"/><path d="M 44 69 Q 54 62 64 68 Q 74 62 84 69 L 84 55 Q 74 48 64 54 Q 54 48 44 55 Z" fill="#ffffff" stroke="#cbd5e1" stroke-width="0.8"/><path d="M 44 68 Q 54 61 64 67 Q 74 61 84 68 L 84 54 Q 74 47 64 53 Q 54 47 44 54 Z" fill="#fffbeb"/><line x1="64" y1="53" x2="64" y2="67" stroke="#94a3b8" stroke-width="1"/><line x1="48" y1="56" x2="60" y2="56" stroke="#94a3b8" stroke-width="0.9" stroke-linecap="round"/><line x1="48" y1="59" x2="60" y2="59" stroke="#94a3b8" stroke-width="0.9" stroke-linecap="round"/><line x1="48" y1="62" x2="57" y2="62" stroke="#94a3b8" stroke-width="0.9" stroke-linecap="round"/><line x1="68" y1="56" x2="80" y2="56" stroke="#94a3b8" stroke-width="0.9" stroke-linecap="round"/><line x1="68" y1="59" x2="80" y2="59" stroke="#94a3b8" stroke-width="0.9" stroke-linecap="round"/><line x1="68" y1="62" x2="77" y2="62" stroke="#94a3b8" stroke-width="0.9" stroke-linecap="round"/><path d="M 64 67 Q 66 73 62 76 L 65 74 L 68 76 Q 65 72 64 67" fill="#ef4444"/><rect x="74" y="50" width="8" height="2.5" rx="1" fill="#d97706"/><path d="M 78 50 L 78 36 Q 78 32 72 32 L 67 32" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round"/><path d="M 59 32 Q 66 27 73 32 L 72 36 Q 66 33 60 36 Z" fill="#15803d" stroke="#166534" stroke-width="0.8"/><polygon points="60,36 72,36 82,54 50,54" fill="#fef08a" opacity="0.25"/></svg>`,
+      schooloffice: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><rect x="8" y="82" width="84" height="4" rx="2" fill="#cbd5e1"/><rect x="18" y="16" width="64" height="15" rx="3" fill="#1e3a8a"/><rect x="22" y="19" width="56" height="9" rx="1.5" fill="#3b82f6"/><text x="50" y="26" font-family="sans-serif" font-weight="900" font-size="6" fill="#ffffff" text-anchor="middle" letter-spacing="0.8">SCHOOL OFFICE</text><rect x="12" y="52" width="76" height="30" rx="2" fill="#d97706"/><rect x="10" y="48" width="80" height="6" rx="2" fill="#b45309"/><rect x="20" y="32" width="60" height="16" rx="1" fill="#e0f2fe" opacity="0.6"/><line x1="50" y1="32" x2="50" y2="48" stroke="#94a3b8" stroke-width="1.5"/><rect x="16" y="58" width="20" height="20" rx="1" fill="#92400e"/><circle cx="26" cy="68" r="1.5" fill="#facc15"/><rect x="64" y="58" width="20" height="20" rx="1" fill="#92400e"/><circle cx="74" cy="68" r="1.5" fill="#facc15"/><circle cx="28" cy="45" r="3.5" fill="#ca8a04"/><rect x="25" y="46.5" width="6" height="1.5" fill="#78350f"/><line x1="28" y1="41.5" x2="28" y2="40" stroke="#ca8a04" stroke-width="1.5"/><rect x="42" y="42" width="16" height="6" rx="1" fill="#ffffff" stroke="#cbd5e1" stroke-width="0.8"/><line x1="44" y1="44" x2="56" y2="44" stroke="#dc2626" stroke-width="0.8"/><line x1="44" y1="46" x2="52" y2="46" stroke="#334155" stroke-width="0.8"/><rect x="68" y="40" width="8" height="8" rx="1" fill="#475569"/><circle cx="72" cy="44" r="2.5" fill="#38bdf8"/></svg>`,
+      teachersoffice: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><rect x="8" y="82" width="84" height="4" rx="2" fill="#cbd5e1"/><rect x="16" y="56" width="68" height="8" rx="2" fill="#475569"/><rect x="20" y="64" width="6" height="20" fill="#334155"/><rect x="74" y="64" width="6" height="20" fill="#334155"/><rect x="52" y="64" width="22" height="18" rx="1" fill="#1e293b"/><rect x="22" y="48" width="16" height="3" rx="0.5" fill="#3b82f6"/><rect x="21" y="44" width="16" height="3" rx="0.5" fill="#10b981"/><rect x="22" y="40" width="16" height="3" rx="0.5" fill="#ef4444"/><text x="32" y="38" font-family="sans-serif" font-weight="900" font-size="7" fill="#dc2626">100</text><line x1="38" y1="42" x2="44" y2="34" stroke="#dc2626" stroke-width="1.5" stroke-linecap="round"/><polygon points="46,55 64,55 62,40 48,40" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1"/><rect x="50" y="43" width="10" height="8" fill="#38bdf8"/><polygon points="44,56 66,56 68,58 42,58" fill="#94a3b8"/><rect x="68" y="46" width="6" height="9" rx="1" fill="#f59e0b"/><line x1="70" y1="46" x2="69" y2="40" stroke="#dc2626" stroke-width="1"/><line x1="72" y1="46" x2="72" y2="38" stroke="#3b82f6" stroke-width="1"/><line x1="74" y1="46" x2="75" y2="39" stroke="#10b981" stroke-width="1"/></svg>`,
+      principalsoffice: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><rect x="8" y="82" width="84" height="4" rx="2" fill="#cbd5e1"/><rect x="36" y="14" width="28" height="20" rx="2" fill="#fef3c7" stroke="#b45309" stroke-width="2"/><circle cx="50" cy="24" r="4" fill="#f59e0b"/><polygon points="48,27 50,31 52,27" fill="#dc2626"/><rect x="14" y="54" width="72" height="12" rx="2" fill="#78350f" stroke="#451a03" stroke-width="1.5"/><rect x="18" y="66" width="64" height="18" fill="#92400e"/><rect x="22" y="68" width="16" height="14" rx="1" fill="#78350f"/><circle cx="30" cy="74" r="1" fill="#facc15"/><rect x="62" y="68" width="16" height="14" rx="1" fill="#78350f"/><circle cx="70" cy="74" r="1" fill="#facc15"/><rect x="42" y="51" width="16" height="4" rx="0.5" fill="#facc15" stroke="#ca8a04" stroke-width="0.8"/><path d="M42 52 C40 38 60 38 58 52 Z" fill="#1e1b4b"/><circle cx="26" cy="47" r="5" fill="#0284c7" stroke="#ca8a04" stroke-width="1"/><path d="M23 45 Q26 44 28 47" fill="#22c55e"/><line x1="26" y1="52" x2="26" y2="54" stroke="#ca8a04" stroke-width="1.5"/></svg>`,
+      nursesoffice: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><rect x="8" y="82" width="84" height="4" rx="2" fill="#cbd5e1"/><rect x="14" y="58" width="46" height="10" rx="2" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/><rect x="16" y="54" width="12" height="6" rx="2" fill="#f1f5f9"/><line x1="16" y1="68" x2="16" y2="82" stroke="#64748b" stroke-width="2.5"/><line x1="58" y1="68" x2="58" y2="82" stroke="#64748b" stroke-width="2.5"/><rect x="28" y="58" width="30" height="10" fill="#bae6fd" opacity="0.6"/><rect x="66" y="52" width="22" height="18" rx="3" fill="#ffffff" stroke="#ef4444" stroke-width="1.5"/><rect x="74" y="49" width="6" height="3" fill="#64748b"/><path d="M75 56 h4 v3 h3 v4 h-3 v3 h-4 v-3 h-3 v-4 h3 Z" fill="#ef4444"/><line x1="88" y1="18" x2="88" y2="82" stroke="#475569" stroke-width="2"/><line x1="86" y1="28" x2="88" y2="28" stroke="#ef4444" stroke-width="1.5"/><line x1="86" y1="38" x2="88" y2="38" stroke="#475569" stroke-width="1.5"/><line x1="86" y1="48" x2="88" y2="48" stroke="#475569" stroke-width="1.5"/><rect x="84" y="80" width="8" height="4" fill="#334155"/><path d="M36 24 C36 34 46 34 46 24" fill="none" stroke="#0284c7" stroke-width="1.5"/><circle cx="41" cy="38" r="3" fill="#94a3b8" stroke="#0284c7" stroke-width="1"/></svg>`,
+      playground: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><path d="M0 76 Q50 71 100 76 L100 100 L0 100 Z" fill="#b48256"/><path d="M0 83 Q50 79 100 83 L100 100 L0 100 Z" fill="#9f6d42"/><line x1="8" y1="28" x2="52" y2="28" stroke="#1d4ed8" stroke-width="3.5" stroke-linecap="round"/><line x1="8" y1="76" x2="14" y2="28" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/><line x1="20" y1="76" x2="14" y2="28" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/><line x1="10" y1="60" x2="18" y2="60" stroke="#3b82f6" stroke-width="2"/><line x1="40" y1="76" x2="46" y2="28" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/><line x1="52" y1="76" x2="46" y2="28" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/><line x1="42" y1="60" x2="50" y2="60" stroke="#3b82f6" stroke-width="2"/><line x1="25" y1="29" x2="25" y2="58" stroke="#64748b" stroke-width="1.2"/><line x1="35" y1="29" x2="35" y2="58" stroke="#64748b" stroke-width="1.2"/><rect x="22" y="58" width="16" height="3.5" rx="1.5" fill="#dc2626"/><line x1="62" y1="76" x2="66" y2="36" stroke="#eab308" stroke-width="2.5"/><line x1="62.5" y1="66" x2="66.5" y2="66" stroke="#ca8a04" stroke-width="1.5"/><line x1="63.5" y1="56" x2="67.5" y2="56" stroke="#ca8a04" stroke-width="1.5"/><line x1="64.5" y1="46" x2="68.5" y2="46" stroke="#ca8a04" stroke-width="1.5"/><circle cx="66" cy="36" r="3" fill="#eab308"/><path d="M66 38 Q78 44 92 74" fill="none" stroke="#ef4444" stroke-width="4.5" stroke-linecap="round"/><path d="M66 40 Q78 46 92 76" fill="none" stroke="#facc15" stroke-width="3" stroke-linecap="round"/></svg>`,
+      restroom: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="14" fill="${bg}"/><rect x="8" y="82" width="84" height="4" rx="2" fill="#cbd5e1"/><circle cx="34" cy="26" r="4.5" fill="#2563eb"/><polygon points="34,32 26,44 42,44" fill="#2563eb"/><rect x="29" y="44" width="4" height="12" rx="1" fill="#2563eb"/><rect x="35" y="44" width="4" height="12" rx="1" fill="#2563eb"/><circle cx="66" cy="26" r="4.5" fill="#e11d48"/><polygon points="66,32 56,48 76,48" fill="#e11d48"/><rect x="61" y="48" width="4" height="10" rx="1" fill="#e11d48"/><rect x="67" y="48" width="4" height="10" rx="1" fill="#e11d48"/><line x1="50" y1="18" x2="50" y2="58" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="3 3"/><rect x="32" y="66" width="36" height="10" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/><path d="M50 66 L50 60 Q50 58 48 58 L46 58" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round"/><circle cx="46" cy="62" r="1.5" fill="#38bdf8"/><rect x="46" y="76" width="8" height="8" fill="#e2e8f0"/></svg>`
+    };
+    return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(icons[name] || icons.classroom);
+  }
+
+  const DEFAULT_PLACES = [
+    { id: 0, name: "Classroom", image: svgIcon("classroom", "#2563eb", "#eff6ff") },
+    { id: 1, name: "Science Room", image: svgIcon("scienceroom", "#059669", "#ecfdf5") },
+    { id: 2, name: "Music Room", image: svgIcon("musicroom", "#d97706", "#fefce8") },
+    { id: 3, name: "Art Room", image: svgIcon("artroom", "#db2777", "#fdf2f8") },
+    { id: 4, name: "Gym", image: svgIcon("gym", "#ea580c", "#fff7ed") },
+    { id: 5, name: "Library", image: svgIcon("library", "#0891b2", "#ecfeff") },
+    { id: 6, name: "School Office", image: svgIcon("schooloffice", "#0284c7", "#f0f9ff") },
+    { id: 7, name: "Teachers' Office", image: svgIcon("teachersoffice", "#4f46e5", "#eef2ff") },
+    { id: 8, name: "Principal's Office", image: svgIcon("principalsoffice", "#7c3aed", "#f5f3ff") },
+    { id: 9, name: "Nurse's Office", image: svgIcon("nursesoffice", "#e11d48", "#fff1f2") },
+    { id: 10, name: "Playground", image: svgIcon("playground", "#b45309", "#fef7ed") },
+    { id: 11, name: "Restroom", image: svgIcon("restroom", "#0d9488", "#f0fdfa") }
+  ];
+
+  // Top-down person walker
+  function createTopDownPerson(stepRight) {
+    const leftFootY = stepRight ? 44 : 22;
+    const rightFootY = stepRight ? 22 : 44;
+    const rightHandY = stepRight ? 41 : 23;
+    const leftHandY = stepRight ? 23 : 41;
+    return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <ellipse cx="22" cy="${leftFootY}" rx="4.5" ry="8" fill="#1e293b"/>
+  <ellipse cx="42" cy="${rightFootY}" rx="4.5" ry="8" fill="#1e293b"/>
+  <circle cx="12" cy="${leftHandY}" r="4" fill="#fed7aa"/>
+  <circle cx="52" cy="${rightHandY}" r="4" fill="#fed7aa"/>
+  <ellipse cx="32" cy="34" rx="18" ry="10.5" fill="#0284c7"/>
+  <ellipse cx="32" cy="31" rx="6" ry="3.5" fill="#fed7aa"/>
+  <ellipse cx="32" cy="31" rx="11" ry="10" fill="#78350f"/>
+  <circle cx="20" cy="31" r="2.5" fill="#fed7aa"/>
+  <circle cx="44" cy="31" r="2.5" fill="#fed7aa"/>
+  <path d="M 23 27 C 23 8, 41 8, 41 27 C 36 24, 28 24, 23 27 Z" fill="#b91c1c"/>
+  <path d="M 24 23 C 25 13, 39 13, 40 23" stroke="#fca5a5" stroke-width="1" fill="none"/>
+  <path d="M 25 19 C 26 13, 38 13, 39 19" stroke="#fca5a5" stroke-width="0.75" fill="none" opacity="0.6"/>
+  <ellipse cx="32" cy="30" rx="10" ry="9" fill="#dc2626"/>
+  <line x1="32" y1="21" x2="32" y2="30" stroke="#7f1d1d" stroke-width="0.8" opacity="0.4"/>
+  <line x1="32" y1="30" x2="32" y2="39" stroke="#7f1d1d" stroke-width="0.8" opacity="0.4"/>
+  <line x1="32" y1="30" x2="22" y2="30" stroke="#7f1d1d" stroke-width="0.8" opacity="0.4"/>
+  <line x1="32" y1="30" x2="42" y2="30" stroke="#7f1d1d" stroke-width="0.8" opacity="0.4"/>
+  <circle cx="32" cy="30" r="1.8" fill="#7f1d1d"/>
+</svg>`);
+  }
+
+  const personSvg1 = createTopDownPerson(false);
+  const personSvg2 = createTopDownPerson(true);
+  let stepToggle = false;
+
+  /* ==========================================================================
+     2. INDEXEDDB LOCAL STORAGE (School Storage)
+     ========================================================================== */
+  const DB_NAME = "SchoolDirectionsDB";
+  const DB_VERSION = 1;
+  const STORE_PLACES = "places";
+
+  const SchoolStorage = {
+    db: null,
+    async init() {
+      return new Promise((resolve) => {
+        if (!window.indexedDB) return resolve();
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(STORE_PLACES)) {
+            db.createObjectStore(STORE_PLACES, { keyPath: "id" });
+          }
+        };
+        req.onsuccess = (e) => {
+          this.db = e.target.result;
+          resolve();
+        };
+        req.onerror = () => resolve();
+      });
+    },
+
+    async savePlace(place) {
+      const record = { ...place };
+      if (this.db) {
+        return new Promise((resolve) => {
+          try {
+            const tx = this.db.transaction(STORE_PLACES, "readwrite");
+            tx.objectStore(STORE_PLACES).put(record);
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => resolve();
+          } catch(e) { resolve(); }
+        });
+      }
+      try {
+        localStorage.setItem(`school_place_${place.id}`, JSON.stringify(record));
+      } catch(e) {}
+    },
+
+    async getAllPlaces() {
+      if (this.db) {
+        return new Promise((resolve) => {
+          try {
+            const tx = this.db.transaction(STORE_PLACES, "readonly");
+            const req = tx.objectStore(STORE_PLACES).getAll();
+            req.onsuccess = () => resolve(req.result || []);
+            req.onerror = () => resolve([]);
+          } catch(e) { resolve([]); }
+        });
+      }
+      const list = [];
+      for (let i = 0; i < 12; i++) {
+        try {
+          let item = localStorage.getItem(`school_place_${i}`);
+          if (!item) {
+            item = localStorage.getItem(`directions_place_school_${i}`);
+          }
+          if (item) list.push(JSON.parse(item));
+        } catch(e) {}
+      }
+      return list;
+    },
+
+    async clearAll() {
+      if (this.db) {
+        return new Promise((resolve) => {
+          try {
+            const tx = this.db.transaction(STORE_PLACES, "readwrite");
+            tx.objectStore(STORE_PLACES).clear();
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => resolve();
+          } catch(e) { resolve(); }
+        });
+      }
+      for (let i = 0; i < 12; i++) {
+        try {
+          localStorage.removeItem(`school_place_${i}`);
+          localStorage.removeItem(`directions_place_school_${i}`);
+        } catch(e) {}
+      }
+    }
+  };
+
+  function compressImage(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 400;
+          let { width, height } = img;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL("image/jpeg", 0.85));
+        };
+        img.onerror = reject;
+        img.src = e.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  /* ==========================================================================
+     3. GAME STATE & 7x6 GRID NAVIGATION
+     ========================================================================== */
+  let places = JSON.parse(JSON.stringify(DEFAULT_PLACES));
+  let currentMode = "practice";
+  let revealedSecrets = new Set();
+  let secretOrder = null;
+
+  let moverPosition = "start";
+  let moverAngle = 90;
+
+  function getMoverDir() {
+    const norm = ((moverAngle % 360) + 360) % 360;
+    if (norm === 0) return "north";
+    if (norm === 90) return "east";
+    if (norm === 180) return "south";
+    if (norm === 270) return "west";
+    return "north";
+  }
+
+  const entryNorthObj = {
+    14: 0, 16: 1, 18: 2, 20: 3,
+    28: 4, 30: 5, 32: 6, 34: 7,
+    42: 8, 44: 9, 46: 10, 48: 11
+  };
+
+  const entrySouthObj = {
+    0: 0,  2: 1,  4: 2,  6: 3,
+    14: 4, 16: 5, 18: 6, 20: 7,
+    28: 8, 30: 9, 32: 10, 34: 11
+  };
+
+  const canMoveCells = new Set([
+    0, 1, 2, 3, 4, 5, 6,
+    8, 10, 12,
+    14, 15, 16, 17, 18, 19, 20,
+    22, 24, 26,
+    28, 29, 30, 31, 32, 33, 34,
+    36, 38, 40,
+    42, 43, 44, 45, 46, 47, 48,
+    "start", 50
+  ]);
+
+  /* ==========================================================================
+     4. BOARD RENDERING & POSITIONING
+     ========================================================================== */
+  const roomsGridEl = document.getElementById("roomsGrid");
+  const moverAvatarEl = document.getElementById("moverAvatar");
+  const moverImgEl = document.getElementById("moverImg");
+
+  moverImgEl.src = personSvg1;
+
+  function renderRooms() {
+    roomsGridEl.innerHTML = "";
+    for (let index = 0; index < 12; index++) {
+      const placeIndex = (currentMode === "secret" && secretOrder) ? secretOrder[index] : index;
+      const place = places[placeIndex];
+      const box = document.createElement("div");
+      box.className = "room-box";
+      box.id = `room_${index}`;
+      box.dataset.index = index;
+      box.dataset.placeIndex = placeIndex;
+
+      let front = "";
+      let back = "";
+
+      if (currentMode === "secret") {
+        const isRev = revealedSecrets.has(index);
+        front = `<div class="secret-number">${index + 1}</div>`;
+        back = `
+          <img src="${place.image}" alt="${place.name}" class="room-img" data-index="${index}">
+          <div class="room-label" data-index="${index}">${place.name}</div>
+        `;
+        if (isRev) box.classList.add("is-flipped");
+      } else {
+        front = `
+          <img src="${place.image}" alt="${place.name}" class="room-img" data-index="${index}" title="Click or drop an image to change">
+          <div class="room-label" contenteditable="true" spellcheck="false" data-index="${index}" title="Click to edit name">${place.name}</div>
+        `;
+        back = front;
+      }
+
+      const isCustom = hasCustomImage(placeIndex) || (places[placeIndex].name !== DEFAULT_PLACES[placeIndex].name);
+      box.innerHTML = `
+        <input type="file" class="room-file-input" data-index="${index}" accept="image/*" style="display:none;">
+        ${currentMode === "practice" ? `
+        <div class="room-actions">
+          <button class="room-action-btn img-upload-btn" data-index="${index}" title="Change picture">
+            <i class="material-icons" style="font-size:15px;line-height:24px;">photo_camera</i>
+          </button>
+          ${isCustom ? `
+          <button class="room-action-btn img-revert-btn" data-index="${index}" title="Revert to default image and text">
+            <i class="material-icons" style="font-size:15px;line-height:24px;">restart_alt</i>
+          </button>
+          ` : ''}
+        </div>
+        ` : ''}
+        <div class="room-inner">
+          <div class="room-front">${front}</div>
+          <div class="room-back">${back}</div>
+        </div>
+      `;
+
+      box.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        box.classList.add("drag-over");
+      });
+
+      box.addEventListener("dragleave", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        box.classList.remove("drag-over");
+      });
+
+      box.addEventListener("drop", async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        box.classList.remove("drag-over");
+        if (currentMode !== "practice") return;
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith("image/")) {
+          await updateRoomImage(placeIndex, file);
+        }
+      });
+
+      const fileInput = box.querySelector(".room-file-input");
+      if (fileInput) {
+        fileInput.addEventListener("change", async (e) => {
+          const file = e.target.files[0];
+          if (file) {
+            await updateRoomImage(placeIndex, file);
+          }
+        });
+      }
+
+      const uploadBtn = box.querySelector(".img-upload-btn");
+      if (uploadBtn && fileInput) {
+        uploadBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          fileInput.click();
+        });
+      }
+
+      const revertBtn = box.querySelector(".img-revert-btn");
+      if (revertBtn) {
+        revertBtn.addEventListener("click", async (e) => {
+          e.stopPropagation();
+          await revertRoomImage(placeIndex);
+        });
+      }
+
+      if (currentMode === "practice") {
+        const imgEl = box.querySelector(".room-img");
+        if (imgEl && fileInput) {
+          imgEl.addEventListener("click", (e) => {
+            e.stopPropagation();
+            fileInput.click();
+          });
+        }
+      }
+
+      const labelEls = box.querySelectorAll(".room-label[contenteditable='true']");
+      labelEls.forEach(labelEl => {
+        labelEl.addEventListener("click", (e) => e.stopPropagation());
+        labelEl.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            labelEl.blur();
+          }
+        });
+        labelEl.addEventListener("blur", async () => {
+          const newName = labelEl.innerText.trim() || DEFAULT_PLACES[placeIndex].name;
+          labelEl.innerText = newName;
+          places[placeIndex].name = newName;
+          await SchoolStorage.savePlace(places[placeIndex]);
+        });
+      });
+
+      box.addEventListener("click", () => enterRoom(index));
+      roomsGridEl.appendChild(box);
+    }
+  }
+
+  function hasCustomImage(index) {
+    const place = places[index];
+    if (!place) return false;
+    if (place.hasCustomImage === true) return true;
+    if (place.hasCustomImage === false) return false;
+    return typeof place.image === "string" && !place.image.startsWith("data:image/svg+xml");
+  }
+
+  async function updateRoomImage(index, file) {
+    try {
+      const compressed = await compressImage(file);
+      places[index].image = compressed;
+      places[index].hasCustomImage = true;
+      await SchoolStorage.savePlace(places[index]);
+      renderRooms();
+      updateMoverVisual();
+    } catch(err) {
+      console.error("Image update failed:", err);
+    }
+  }
+
+  async function revertRoomImage(index) {
+    try {
+      places[index].image = DEFAULT_PLACES[index].image;
+      places[index].name = DEFAULT_PLACES[index].name;
+      places[index].hasCustomImage = false;
+      await SchoolStorage.savePlace(places[index]);
+      renderRooms();
+      updateMoverVisual();
+    } catch(err) {
+      console.error("Image revert failed:", err);
+    }
+  }
+
+  function updateMoverVisual() {
+    const appLayout = document.getElementById("appLayout");
+    const layoutRect = appLayout ? appLayout.getBoundingClientRect() : { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
+
+    const r0 = document.getElementById("room_0");
+    const r1 = document.getElementById("room_1");
+    const r2 = document.getElementById("room_2");
+    const r3 = document.getElementById("room_3");
+    const r4 = document.getElementById("room_4");
+    const r8 = document.getElementById("room_8");
+
+    if (!r0 || !r1 || !r2 || !r3 || !r4 || !r8) return;
+
+    const b0 = r0.getBoundingClientRect();
+    const b1 = r1.getBoundingClientRect();
+    const b2 = r2.getBoundingClientRect();
+    const b3 = r3.getBoundingClientRect();
+    const b4 = r4.getBoundingClientRect();
+    const b8 = r8.getBoundingClientRect();
+
+    const colXMap = [
+      (b0.left + b0.width / 2) - layoutRect.left,
+      ((b0.right + b1.left) / 2) - layoutRect.left,
+      (b1.left + b1.width / 2) - layoutRect.left,
+      ((b1.right + b2.left) / 2) - layoutRect.left,
+      (b2.left + b2.width / 2) - layoutRect.left,
+      ((b2.right + b3.left) / 2) - layoutRect.left,
+      (b3.left + b3.width / 2) - layoutRect.left
+    ];
+
+    const topStreetEl = document.getElementById("topStreet");
+    const topStreetRect = topStreetEl ? topStreetEl.getBoundingClientRect() : null;
+    const topStreetY = topStreetRect ? (topStreetRect.top + topStreetRect.height / 2 - layoutRect.top) : ((b0.top - layoutRect.top) - 10);
+
+    const bottomStreetEl = document.getElementById("bottomStreet");
+    const bottomStreetRect = bottomStreetEl ? bottomStreetEl.getBoundingClientRect() : null;
+    const bottomStreetY = bottomStreetRect ? (bottomStreetRect.top + bottomStreetRect.height / 2 - layoutRect.top) : ((b8.bottom - layoutRect.top) + 10);
+
+    const streetH1 = ((b0.bottom + b4.top) / 2) - layoutRect.top;
+    const streetH2 = ((b4.bottom + b8.top) / 2) - layoutRect.top;
+
+    const rowYMap = [
+      topStreetY,
+      ((b0.top + b0.height / 2) - layoutRect.top),
+      streetH1,
+      ((b4.top + b4.height / 2) - layoutRect.top),
+      streetH2,
+      ((b8.top + b8.height / 2) - layoutRect.top),
+      bottomStreetY
+    ];
+
+    let colX = 0;
+    let rowY = 0;
+
+    if (moverPosition === 50 || moverPosition === "start") {
+      const sideControls = document.querySelector(".side-controls");
+      const sideRect = sideControls ? sideControls.getBoundingClientRect() : { left: 0, width: 105 };
+      colX = (sideRect.left - layoutRect.left) + sideRect.width / 2;
+      rowY = streetH2;
+    } else {
+      const col = moverPosition % 7;
+      const row = Math.floor(moverPosition / 7);
+      colX = colXMap[col];
+      rowY = rowYMap[row];
+    }
+
+    moverAvatarEl.style.left = `${colX}px`;
+    moverAvatarEl.style.top = `${rowY}px`;
+    moverImgEl.style.transform = `rotate(${moverAngle}deg)`;
+  }
+
+  /* ==========================================================================
+     5. MOVEMENT CONTROLS
+     ========================================================================== */
+  function turnLeft() {
+    moverAngle -= 90;
+    updateMoverVisual();
+  }
+
+  function turnRight() {
+    moverAngle += 90;
+    updateMoverVisual();
+  }
+
+  let walkTimer = null;
+  function stepWalk(duration = 350, steps = 4) {
+    if (walkTimer) clearInterval(walkTimer);
+    let count = 0;
+    const interval = Math.floor(duration / steps);
+    walkTimer = setInterval(() => {
+      stepToggle = !stepToggle;
+      moverImgEl.src = stepToggle ? personSvg2 : personSvg1;
+      count++;
+      if (count >= steps) {
+        clearInterval(walkTimer);
+        walkTimer = null;
+      }
+    }, interval);
+  }
+
+  function bounceBlocked() {
+    if (!moverAvatarEl) return;
+    moverAvatarEl.classList.remove("mover-blocked");
+    void moverAvatarEl.offsetWidth;
+    moverAvatarEl.classList.add("mover-blocked");
+    setTimeout(() => {
+      if (moverAvatarEl) moverAvatarEl.classList.remove("mover-blocked");
+    }, 250);
+  }
+
+  function goStraight() {
+    const moverDir = getMoverDir();
+    if (moverPosition === 50 || moverPosition === "start") {
+      moverAngle = 90;
+      moverPosition = 28;
+      stepWalk();
+      updateMoverVisual();
+      return true;
+    }
+
+    if (moverDir === "north") {
+      if (entryNorthObj[moverPosition] !== undefined) {
+        enterRoom(entryNorthObj[moverPosition]);
+        stepWalk(280, 2);
+        return true;
+      }
+      if (moverPosition - 14 >= 0 && canMoveCells.has(moverPosition - 14)) {
+        moverPosition -= 14;
+        stepWalk();
+        updateMoverVisual();
+        return true;
+      }
+    } else if (moverDir === "south") {
+      if (entrySouthObj[moverPosition] !== undefined) {
+        enterRoom(entrySouthObj[moverPosition]);
+        stepWalk(280, 2);
+        return true;
+      }
+      if (moverPosition + 14 < 49 && canMoveCells.has(moverPosition + 14)) {
+        moverPosition += 14;
+        stepWalk();
+        updateMoverVisual();
+        return true;
+      }
+    } else if (moverDir === "east") {
+      if (moverPosition % 7 < 6 && canMoveCells.has(moverPosition + 1)) {
+        moverPosition += 1;
+        stepWalk();
+        updateMoverVisual();
+        return true;
+      }
+    } else if (moverDir === "west") {
+      if (moverPosition === 28) {
+        moverPosition = "start";
+        stepWalk();
+        updateMoverVisual();
+        return true;
+      }
+      if (moverPosition % 7 > 0 && canMoveCells.has(moverPosition - 1)) {
+        moverPosition -= 1;
+        stepWalk();
+        updateMoverVisual();
+        return true;
+      }
+    }
+    bounceBlocked();
+    return false;
+  }
+
+  function reset() {
+    if (typeof voice !== "undefined" && voice) {
+      voice.clearQueue();
+    }
+    if (walkTimer) {
+      clearInterval(walkTimer);
+      walkTimer = null;
+    }
+    moverPosition = "start";
+    moverAngle = 90;
+    stepToggle = false;
+    moverImgEl.src = personSvg1;
+    updateMoverVisual();
+
+    document.querySelectorAll(".room-box").forEach(box => box.classList.remove("is-flipped", "highlight"));
+    if (currentMode === "secret") {
+      revealedSecrets.clear();
+      renderRooms();
+    }
+  }
+
+  function enterRoom(index) {
+    const place = places[index];
+    const box = document.getElementById(`room_${index}`);
+    if (!place || !box) return;
+
+    if (currentMode === "practice") {
+      box.classList.add("highlight");
+      setTimeout(() => box.classList.remove("highlight"), 1800);
+    } else if (currentMode === "secret") {
+      box.classList.add("is-flipped");
+      revealedSecrets.add(index);
+    }
+  }
+
+  function setMode(mode) {
+    currentMode = mode;
+    const isSecret = (mode === "secret");
+    const switchInput = document.getElementById("directionsModeSwitch");
+    if (switchInput) {
+      switchInput.checked = isSecret;
+    }
+    if (isSecret) {
+      $("#labelPractice").removeClass("active").addClass("inactive");
+      $("#labelSecret").removeClass("inactive").addClass("active");
+      revealedSecrets.clear();
+      secretOrder = [0,1,2,3,4,5,6,7,8,9,10,11].sort(() => 0.5 - Math.random());
+    } else {
+      $("#labelPractice").removeClass("inactive").addClass("active");
+      $("#labelSecret").removeClass("active").addClass("inactive");
+      secretOrder = null;
+    }
+    renderRooms();
+    reset();
+  }
+
+  /* ==========================================================================
+     6. SPEECH RECOGNITION (SpeechController)
+     ========================================================================== */
+  const voice = new SpeechController({
+    listenBtn: "#listen",
+    stopBtn: "#stop",
+    transcriptEl: "#speechTranscript",
+    unsupportedAlert: "#unsupportedAlert",
+    echoWindowMs: 700,
+    vocab: [
+      "turn left", "left", "turn to the left",
+      "turn right", "right", "turn to the right",
+      "on your right", "on the right", "to your right", "to the right", "it's on your right", "it is on your right",
+      "on your left", "on the left", "to your left", "to the left", "it's on your left", "it is on your left",
+      "go straight", "straight", "forward", "ahead", "move forward",
+      "go straight one block", "one block",
+      "go straight two blocks", "straight two blocks", "two blocks",
+      "go straight to blocks", "straight to blocks", "to blocks",
+      "go straight too blocks", "straight too blocks", "too blocks",
+      "go straight three blocks", "three blocks",
+      "restart", "reset", "start over"
+    ],
+    commands: [
+      {
+        id: "reset",
+        regex: /\b(restart|reset|start over|start again|go back)\b/i,
+        action: () => voice.enqueue(() => reset(), 400)
+      },
+      {
+        id: "straight3",
+        regex: /\b(go straight (for )?(three|3) blocks?|(three|3) blocks?)\b/i,
+        action: () => {
+          voice.enqueue(() => goStraight(), 380);
+          voice.enqueue(() => goStraight(), 380);
+          voice.enqueue(() => goStraight(), 380);
+        }
+      },
+      {
+        id: "straight2",
+        regex: /\b(go straight (for )?(two|to|too|2) blocks?|(two|to|too|2) blocks?|straight (two|to|too|2))\b/i,
+        action: () => {
+          voice.enqueue(() => goStraight(), 380);
+          voice.enqueue(() => goStraight(), 380);
+        }
+      },
+      {
+        id: "onRight",
+        regex: /\b((it('?s| is) )?(on|to|at) (your|the) right( side)?)\b/i,
+        action: () => {
+          voice.enqueue(() => turnRight(), 240);
+          voice.enqueue(() => goStraight(), 380);
+        }
+      },
+      {
+        id: "onLeft",
+        regex: /\b((it('?s| is) )?(on|to|at) (your|the) left( side)?)\b/i,
+        action: () => {
+          voice.enqueue(() => turnLeft(), 240);
+          voice.enqueue(() => goStraight(), 380);
+        }
+      },
+      {
+        id: "turnLeft",
+        regex: /\b(turn (to the )?left|turn left|left)\b/i,
+        action: () => voice.enqueue(() => turnLeft(), 260)
+      },
+      {
+        id: "turnRight",
+        regex: /\b(turn (to the )?right|turn right|right|write)\b/i,
+        action: () => voice.enqueue(() => turnRight(), 260)
+      },
+      {
+        id: "goStraight",
+        regex: /\b(go straight (for )?(one|1) block|(one|1) block|go straight|straight|strait|forward|ahead|move forward|go forward|walk straight)\b/i,
+        action: () => voice.enqueue(() => goStraight(), 380)
+      }
+    ]
+  });
+
+  function startListening() {
+    voice.start();
+  }
+
+  function stopListening() {
+    voice.stop();
+  }
+
+  /* ==========================================================================
+     7. INITIALIZATION
+     ========================================================================== */
+  async function loadPlaces() {
+    places = DEFAULT_PLACES.map(p => ({ ...p }));
+    const saved = await SchoolStorage.getAllPlaces();
+    if (saved && saved.length > 0) {
+      saved.forEach(item => {
+        if (typeof item.id === "number" && item.id < 12) {
+          const isCustom = item.hasCustomImage === true || (item.hasCustomImage !== false && typeof item.image === "string" && !item.image.startsWith("data:image/svg+xml"));
+          places[item.id] = {
+            ...places[item.id],
+            name: item.name || places[item.id].name,
+            image: isCustom ? item.image : DEFAULT_PLACES[item.id].image,
+            hasCustomImage: !!isCustom
+          };
+        }
+      });
+    }
+    renderRooms();
+    updateMoverVisual();
+  }
+
+  async function init() {
+    await SchoolStorage.init();
+    await loadPlaces();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("mode") === "secret") {
+      setMode("secret");
+    } else {
+      setMode("practice");
+    }
+
+    window.addEventListener("resize", updateMoverVisual);
+    window.addEventListener("load", updateMoverVisual);
+
+    $("#listen").on("click", startListening);
+    $("#stop").on("click", stopListening);
+    $("#resetBtn").on("click", reset);
+
+    $("#directionsModeSwitch").on("change", function() {
+      setMode(this.checked ? "secret" : "practice");
+    });
+    $("#labelPractice").on("click", () => setMode("practice"));
+    $("#labelSecret").on("click", () => setMode("secret"));
+
+    // Keyboard controls
+    $(document).on("keydown", (e) => {
+      if ($(e.target).is("input, textarea, [contenteditable='true']")) return;
+      if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
+        e.preventDefault();
+        goStraight();
+      } else if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") {
+        e.preventDefault();
+        turnLeft();
+      } else if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") {
+        e.preventDefault();
+        turnRight();
+      } else if (e.key === "r" || e.key === "R") {
+        e.preventDefault();
+        reset();
+      }
+    });
+
+    window.SchoolApp = {
+      setMode,
+      getCurrentMode: () => currentMode
+    };
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+})();
+</script>
+
+<%- include('../../foot') %>

@@ -20,10 +20,10 @@ const mysql = require('mysql2/promise');
 const passport = require('passport');
 
 const mainRouter = require('./routes/_MAIN.js');
-const TRouter = require('./routes/teachers');
-const mediaRouter = require('./routes/media');
-const authRouter = require('./routes/auth');
-const apiRouter = require('./routes/api');
+const TRouter = require('./routes/teachers.js');
+const mediaRouter = require('./routes/media.js');
+const authRouter = require('./routes/auth.js');
+const apiRouter = require('./routes/api.js');
 
 const { I18n } = require('i18n');
 const i18n = new I18n({
@@ -53,7 +53,7 @@ const sessionStore = new MySQLStore({
 }, dbPool.pool); // .pool accesses the underlying non-promise pool
 
 // Passport configuration
-require('./config/passport')(passport);
+require('./config/passport.js')(passport);
 
 
 const port = process.env.PORT;
