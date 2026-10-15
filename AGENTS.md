@@ -1,4 +1,4 @@
-# AI Agent Instructions for Share English Teaching App
+# AI Agent Instructions for English Jones App
 
 ## Project Overview
 This is a Node.js/Express web application for teaching English vocabulary, integrating EJS templating, Socket.IO, MySQL, and i18n for localization. The app serves interactive activities for students and teachers, using a large vocabulary dataset and SVG-based visual assets.
@@ -13,35 +13,44 @@ This is a Node.js/Express web application for teaching English vocabulary, integ
 - **Frontend**: Vanilla JavaScript, SVG
 
 ## Architecture & Key Components
-- **Express server** (`share.js`): Main entry, sets up routes, view engine, static assets, localization, and error handling.
-- **Routes** (`routes/`): Modular route handlers for main app logic, teachers, media, labs, letters, things, and Socket.IO integration.
+- **Express server** (`ej.js`): Main entry point; sets up routes, view engine, static assets, localization, session management, Socket.IO, and error handling.
+- **Routes** (`routes/`): Modular route handlers:
+  - `routes/_MAIN.js`: Main app logic and activity handling.
+  - `routes/teachers.js`: Teacher portal and management.
+  - `routes/media.js`: Media asset delivery and management.
+  - `routes/labs.js`: Experimental activities and labs.
+  - `routes/letters.js`: Phonics and letter activities.
+  - `routes/things.js`: Things/supplies activities.
+  - `routes/lobby.js` & `lobby/`: Socket.IO multiplayer lobby and real-time room handling.
+  - `routes/vocab.js`: Vocabulary endpoints.
+  - `routes/auth.js`: Authentication (Google OAuth / Passport).
+  - `routes/api.js` & `routes/tools.js`: API helpers and developer tools.
 - **Views** (`views/`): EJS templates for activities, tools, students, teachers, and menus. Activities are grouped by type and audience.
-- **Public assets** (`public/`): Contains images (SVG, PNG, etc.), audio, vocabulary data, and client-side JS for activities.
-- **Vocabulary** (`public/vocabulary.js`): Large array of word objects with metadata (id, book, theme, meaning, image, audio).
+- **Public assets** (`public/`): Images (SVG, PNG, etc.), audio, vocabulary data, and client-side JavaScript for activities.
+- **Vocabulary** (`public/vocabulary.js`): Large array of word objects with metadata (`id`, `book`, `theme`, `meaning`, `image`, `audio`).
 - **SVG Processing Scripts** (`build_object_ejs.js`, `build_supply_ejs.js`, `process_svgs.js`): Used to generate EJS templates and JS definitions from SVG files for activities and supplies.
-- **Localization** (`locales/en.json`, `locales/ja.json`): i18n JSON files for English/Japanese translations.
+- **Localization** (`locales/en.json`, `locales/ja.json`): i18n JSON translation files for English and Japanese.
 
 ## Developer Workflows
-- **Run/Debug**: Start server with `nodemon share.js` (see `package.json` script). App listens on port from `.env` (`PORT`).
-- **Build SVG Assets**: Run `build_object_ejs.js`, `build_supply_ejs.js`, or `process_svgs.js` to generate EJS/JS from SVGs. Output goes to `views/activities/objects/room/`, `views/activities/things/supplies/`, or `public/javascripts/supplies_svg.js`.
-- **Database**: MySQL credentials from `.env`. Main pool in `routes/main.js`. Links table used for activity decks.
+- **Run/Debug**: Start server with `node ej.js`. Port configured in `.env` (`PORT`).
+- **Database**: MySQL credentials loaded from `.env`. Main pool initialized in `routes/_MAIN.js` / config. `links` table is used for activity decks.
 - **Localization**: Add translations to `locales/en.json` and `locales/ja.json`. i18n auto-reloads.
 
 ## Project-Specific Patterns & Conventions
 - **SVG Filenames**: Use underscores for spaces, parentheses for disambiguation (see `README.md` in `public/image/svg/`).
-- **Activity Routing**: Activities are rendered via `/activities/:activity` and `/activities/:activity/:id` endpoints, with deck data from DB or vocabulary.js.
+- **Activity Routing**: Activities are rendered via `/activities/:activity` and `/activities/:activity/:id` endpoints, with deck data from the database or `vocabulary.js`.
 - **Decks**: Decks are arrays of word IDs or objects, passed via POST or stored in DB (`links` table).
 - **EJS Wrappers**: SVGs are wrapped in `<div class="object" data-shape="...">` or `<div class="supply" data-shape="...">` for activities.
 - **Error Handling**: 404 and general errors render EJS templates (`404.ejs`, `error.ejs`).
-- **Localization Usage**: Use `req.__(...)` for translating themes and UI strings.
+- **Localization Usage**: Use `req.__(...)` in routes/middleware and `<%= __('...') %>` in templates for translating themes and UI strings.
 
 ## Integration Points
-- **Socket.IO**: Real-time features via `routes/io.js` and server setup in `share.js`.
-- **MySQL**: Used for storing activity links and retrieving decks.
-- **External APIs**: Google Translate and other translation packages in dependencies.
+- **Socket.IO**: Real-time multiplayer rooms via `lobby/lobby.js` and server initialization in `ej.js`.
+- **MySQL**: Used for storing activity links, sessions (`express-mysql-session`), and retrieving decks.
+- **Authentication**: Passport.js with Google OAuth 2.0 strategy.
 
 ## Examples
-- To add a new activity, create an EJS template in `views/activities/`, add a route in `routes/main.js`, and update deck handling as needed.
+- To add a new activity, create an EJS template in `views/activities/`, add a route in `routes/_MAIN.js`, and update deck handling as needed.
 - To add new vocabulary, update `public/vocabulary.js` and ensure images/audio are present in `public/image/` and `public/audio/`.
 - To process new SVGs, run the relevant build script and commit the generated files.
 
@@ -49,24 +58,7 @@ This is a Node.js/Express web application for teaching English vocabulary, integ
 
 AI agents working on this project should proactively assist with these capabilities:
 
-### 1. SVG Asset Automation
-**When**: New SVG files are added to the project
-**Actions**:
-- Detect SVG additions in `public/image/svg/objects/` or `public/image/svg/supplies/`
-- Automatically run the appropriate build script:
-  - `node build_object_ejs.js` for objects
-  - `node build_supply_ejs.js` for supplies
-  - `node process_svgs.js` for general SVG processing
-- Validate output locations:
-  - EJS templates: `views/activities/objects/room/` or `views/activities/things/supplies/`
-  - JS definitions: `public/javascripts/supplies_svg.js`
-- Check SVG filename conventions:
-  - Use underscores for spaces
-  - Use parentheses for disambiguation
-  - Reference: `public/image/svg/README.md`
-- Verify proper wrapper conventions in generated files
-
-### 2. Vocabulary Management
+### 1. Vocabulary Management
 **When**: `public/vocabulary.js` is modified
 **Actions**:
 - Check that corresponding images exist in `public/image/` for each vocabulary entry
@@ -76,19 +68,19 @@ AI agents working on this project should proactively assist with these capabilit
 - Flag missing or incomplete entries
 - Prompt for asset uploads when missing
 
-### 3. Activity & Template Guidance
+### 2. Activity & Template Guidance
 **When**: New activities or templates are being created
 **Actions**:
 - Suggest correct template location in `views/activities/`
 - Enforce proper wrapper conventions:
   - Objects: `<div class="object" data-shape="...">`
   - Supplies: `<div class="supply" data-shape="...">`
-- Update routing in `routes/main.js`:
+- Update routing in `routes/_MAIN.js`:
   - Ensure routes follow pattern: `/activities/:activity` and `/activities/:activity/:id`
   - Verify deck data source (DB `links` table or `vocabulary.js`)
 - Guide deck structure (arrays of word IDs or objects)
 
-### 4. Localization Support
+### 3. Localization Support
 **When**: Code, templates, or locale files are modified
 **Actions**:
 - Scan for untranslated keys in code and templates
@@ -97,7 +89,7 @@ AI agents working on this project should proactively assist with these capabilit
 - Ensure translation completeness across both languages
 - Check that new UI strings are added to both locale files
 
-### 5. Deck & Routing Validation
+### 4. Deck & Routing Validation
 **When**: Activity routes or deck handling is modified
 **Actions**:
 - Validate POST/GET flows for activities
@@ -105,7 +97,7 @@ AI agents working on this project should proactively assist with these capabilit
 - Ensure DB links in `links` table are correctly created and referenced
 - Verify deck data is properly passed to templates
 
-### 6. Framework Migration Assistance
+### 5. Framework Migration Assistance
 **When**: Refactoring or modernization is needed
 **Actions**:
 - Flag non-standard patterns
@@ -124,12 +116,11 @@ AI agents working on this project should proactively assist with these capabilit
 | Route Modified | Changes to routing files | Validate deck handling and data flow |
 
 ## References
-- **Main server**: `share.js`
-- **Routing**: `routes/main.js`, `routes/teachers.js`, `routes/media.js`, `routes/labs.js`, `routes/letters.js`, `routes/things.js`, `routes/io.js`
+- **Main server**: `ej.js`
+- **Routing**: `routes/_MAIN.js`, `routes/teachers.js`, `routes/media.js`, `routes/labs.js`, `routes/letters.js`, `routes/things.js`, `routes/lobby.js`, `routes/vocab.js`, `routes/auth.js`, `routes/api.js`, `routes/tools.js`
 - **Views**: `views/activities/`, `views/tools/`, `views/students/`, `views/teachers/`
 - **Assets**: `public/image/`, `public/audio/`, `public/vocabulary.js`
 - **SVG conventions**: `public/image/svg/README.md`
-- **SVG processors**: `build_object_ejs.js`, `build_supply_ejs.js`, `process_svgs.js`
 - **Localization**: `locales/en.json`, `locales/ja.json`
 
 ## Setup for AI Agents
@@ -146,30 +137,16 @@ When working on this project, AI agents should:
 
 ```bash
 # Start development server
-nodemon share.js
-
-# Build SVG assets
-node build_object_ejs.js      # Process object SVGs
-node build_supply_ejs.js      # Process supply SVGs
-node process_svgs.js          # General SVG processing
-npm run build-svgs            # Run all SVG builds
+nodemon ej.js
+node ej.js
 
 # Testing
 npm test
 
 # Database connection
-# MySQL pool configured in routes/main.js
+# MySQL pool configured in routes/_MAIN.js
 # Credentials from .env: PORT, DB_HOST, DB_USER, DB_PASSWORD, DB_NAME
 ```
 
-## Providing Feedback
-
-This configuration evolves with the project. To improve it:
-- Update this file directly with new patterns and conventions
-- Add new automated workflows as they're identified
-- Document edge cases and special handling requirements
-- Share improvements via pull requests or issue reports
-
 ---
-_Last updated: 2026-02-06_
-_This file is maintained in `.claude/instructions.md` and serves as the primary reference for AI coding agents._
+_This file is maintained as `AGENTS.md` and serves as the primary reference for AI coding agents._

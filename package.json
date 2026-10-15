@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon share.js",
+    "start": "nodemon ej.js",
     "test": "jest",
     "test:coverage": "jest --coverage"
   },

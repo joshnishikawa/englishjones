@@ -100,13 +100,11 @@ router.get('/slots', (req, res)=>{
 
 router.get('/interview', (req, res)=>{
   try{
-    const validBooks = ['brainbox', 'honto1', 'honto2', 'honto3'];
-    let book = validBooks.includes(req.query.book) ? req.query.book : 'brainbox';
     let page = req.query.page ?? 'airport.png';
 
-    fs.readdir( path.join(__dirname, `../public/image/interview/${book}`), (err, pages)=>{
+    fs.readdir( path.join(__dirname, `../public/image/interview`), (err, pages)=>{
       if (err) throw err;
-      res.render('activities/interview', {book, pages, page});
+      res.render('activities/interview', {pages, page});
     });
   }
   catch(err){ console.error(err); }

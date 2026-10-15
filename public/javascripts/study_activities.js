@@ -1,1 +1,1 @@
-/var/www/assets/js/study_activities.js
+/media/storage/assets/js/study_activities.js

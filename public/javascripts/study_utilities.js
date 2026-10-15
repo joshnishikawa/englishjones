@@ -1,1 +1,1 @@
-/var/www/assets/js/study_utilities.js
+/media/storage/assets/js/study_utilities.js

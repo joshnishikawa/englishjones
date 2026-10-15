@@ -38,7 +38,7 @@ $(function(){
   }
 
   $('#page_select').val(page);
-  if (page) $('#img_container').html(`<img src="/image/interview/brainbox/${page}" alt="interview" class="img-fluid" />`);
+  if (page) $('#img_container').html(`<img src="/image/interview/${page}" alt="interview" class="img-fluid" />`);
   $('#img_container img').css('max-height', '100vh');
   $('#page_select').on('change', function(){
     $('#interview_form').submit();
