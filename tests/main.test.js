@@ -143,10 +143,9 @@ describe('Main Router', () => {
         cb(null, ['page1.png', 'page2.png']);
       });
 
-      const response = await request(app).get('/interview?book=brainbox&page=page1.png');
+      const response = await request(app).get('/interview?page=page1.png');
       expect(response.status).toBe(200);
       expect(app.render).toHaveBeenCalledWith('activities/interview', expect.objectContaining({
-        book: 'brainbox',
         page: 'page1.png',
         pages: ['page1.png', 'page2.png'],
       }), expect.any(Function));

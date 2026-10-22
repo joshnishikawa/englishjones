@@ -1,5 +1,5 @@
 const request = require('supertest');
-const app = require('../share');
+const app = require('../ej');
 
 describe('i18n Locale Detection', () => {
   test('detects English when Accept-Language is en-US (with secondary ja)', async () => {
