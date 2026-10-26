@@ -142,6 +142,13 @@ describe('Frontend Lobby Color Synchronization', () => {
     jest.resetModules();
   });
 
+  const waitForHandler = async (name, maxMs = 500) => {
+    const start = Date.now();
+    while (!socketOnHandlers[name] && Date.now() - start < maxMs) {
+      await new Promise((r) => setTimeout(r, 5));
+    }
+  };
+
   test('updates other player color when host receives setColor from guest', async () => {
     storage['player'] = JSON.stringify({
       id: 'Player1',
@@ -154,7 +161,7 @@ describe('Frontend Lobby Color Synchronization', () => {
     const lobbyCode = fs.readFileSync(path.join(__dirname, '../public/javascripts/lobby/lobby.js'), 'utf8');
     eval(lobbyCode);
 
-    await new Promise((r) => setTimeout(r, 20));
+    await waitForHandler('joined');
 
     // Player 1 (Host) joins
     socketOnHandlers['joined']({
@@ -198,7 +205,7 @@ describe('Frontend Lobby Color Synchronization', () => {
     const lobbyCode = fs.readFileSync(path.join(__dirname, '../public/javascripts/lobby/lobby.js'), 'utf8');
     eval(lobbyCode);
 
-    await new Promise((r) => setTimeout(r, 20));
+    await waitForHandler('joined');
 
     // Player 2 (Guest) joins Player 1's room
     socketOnHandlers['joined']({
@@ -239,7 +246,7 @@ describe('Frontend Lobby Color Synchronization', () => {
     const lobbyCode = fs.readFileSync(path.join(__dirname, '../public/javascripts/lobby/lobby.js'), 'utf8');
     eval(lobbyCode);
 
-    await new Promise((r) => setTimeout(r, 20));
+    await waitForHandler('joined');
 
     socketOnHandlers['joined']({
       room: {
@@ -274,7 +281,7 @@ describe('Frontend Lobby Color Synchronization', () => {
     const popquizCode = fs.readFileSync(path.join(__dirname, '../public/javascripts/lobby/hosted/popquiz.js'), 'utf8');
     eval(popquizCode);
 
-    await new Promise((r) => setTimeout(r, 20));
+    await waitForHandler('joined');
 
     socketOnHandlers['joined']({
       room: {
@@ -323,7 +330,7 @@ describe('Frontend Lobby Color Synchronization', () => {
     const lobbyCode = fs.readFileSync(path.join(__dirname, '../public/javascripts/lobby/lobby.js'), 'utf8');
     eval(lobbyCode);
 
-    await new Promise((r) => setTimeout(r, 20));
+    await waitForHandler('playerJoined');
 
     socketOnHandlers['playerJoined']([
       { id: 'Player1', color: '#ff0000', number: 1 },

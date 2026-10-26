@@ -84,4 +84,63 @@ describe('Things Router', () => {
       expect(app.render).toHaveBeenCalledWith('error', expect.any(Object), expect.any(Function));
     });
   });
+
+  describe('Real EJS Template Rendering for Supplies and Directions', () => {
+    let realApp;
+    const path = require('path');
+
+    beforeAll(() => {
+      realApp = express();
+      realApp.set('view engine', 'ejs');
+      realApp.set('views', path.join(__dirname, '../views'));
+      realApp.use((req, res, next) => {
+        res.locals.__ = (key) => key;
+        res.locals.user = null;
+        res.locals.isAuthenticated = false;
+        next();
+      });
+      realApp.use('/things', router);
+    });
+
+    test('renders supplies template with all 12 supplies and canvas elements', async () => {
+      const res = await request(realApp).get('/things/supplies');
+      expect(res.status).toBe(200);
+      expect(res.text).toContain('id="supplyMenu"');
+      expect(res.text).toContain('id="canvas"');
+      expect(res.text).toContain('id="canvasWrapper"');
+      expect(res.text).toContain('data-shape="stapler"');
+      expect(res.text).toContain('data-shape="pencilcase"');
+      expect(res.text).toContain('data-shape="scissors"');
+      expect(res.text).toContain('data-shape="calendar"');
+      expect(res.text).toContain('data-shape="eraser"');
+      expect(res.text).toContain('data-shape="glue"');
+      expect(res.text).toContain('data-shape="marker"');
+      expect(res.text).toContain('data-shape="notebook"');
+      expect(res.text).toContain('data-shape="pen"');
+      expect(res.text).toContain('data-shape="pencil"');
+      expect(res.text).toContain('data-shape="ruler"');
+      expect(res.text).toContain('data-shape="sharpener"');
+    });
+
+    test('renders town directions template with board, street markings, and mover', async () => {
+      const res = await request(realApp).get('/things/town');
+      expect(res.status).toBe(200);
+      expect(res.text).toContain('id="directionsBoard"');
+      expect(res.text).toContain('id="streetLinesSvg"');
+      expect(res.text).toContain('id="moverAvatar"');
+      expect(res.text).toContain('id="listen"');
+      expect(res.text).toContain('id="stop"');
+    });
+
+    test('renders school directions template with rooms grid and mover', async () => {
+      const res = await request(realApp).get('/things/school');
+      expect(res.status).toBe(200);
+      expect(res.text).toContain('id="directionsBoard"');
+      expect(res.text).toContain('id="roomsGrid"');
+      expect(res.text).toContain('id="moverAvatar"');
+      expect(res.text).toContain('id="listen"');
+      expect(res.text).toContain('id="stop"');
+    });
+  });
 });
+

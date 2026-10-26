@@ -1,3 +1,15 @@
+[x] Point monitor at correct path (/media/storage/assets/monitor) and add safe fallback in ej.js
+[x] Fix test race condition (tests/frontend_set_color.test.js)
+[x] Verify Supplies & Directions activities (school & town)
+[x] Translate 179 missing keys in locales/ja.json
+[ ] Code an activity format to practice dialogs
+[ ] Labelled diagrams for: clothes, body, school, kitchen, tools, maps, around town
+[ ] Sight Words (student activity)
+[ ] Phonics: Click to listen, drag into groups
+[ ] Sentences: Listen, click to listen, drag into order
+[ ] Speaking Slots: Pull lever for random sentence parts
+[ ] Audio samples for all static vocab
+
 code an activity format to practice dialogs
 labelled diagrams for: clothes, body, school, kitchen, tools, maps, around town
 

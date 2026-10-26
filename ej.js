@@ -1,6 +1,15 @@
 //"use strict";
 require('dotenv').config();
-const monitor = require('/var/www/assets/monitor')({ site: 'dev.share' });
+let monitor;
+try {
+  monitor = require('/media/storage/assets/monitor')({ site: 'dev.share' });
+} catch (e) {
+  monitor = {
+    catchGlobals: () => {},
+    sendAlert: () => {},
+    errorHandler: (err, req, res, next) => next(err),
+  };
+}
 monitor.catchGlobals();
 const express = require('express');
 const app = express();
