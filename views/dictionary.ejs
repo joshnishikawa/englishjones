@@ -46,9 +46,9 @@
               class="form-control my-2" placeholder="日本語 / English" style="text-align:right;" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false">
 
       <div class="d-flex justify-content-end align-items-center">
-        <div id="speech_label" class="text-muted me-3 small"><%- __('speech') %></div>
-        <button id="speech_recognition" type="button" class="btn btn-success" title="Click to speak">
-          <i class="material-icons align-middle">mic</i>
+        <div id="speech_label" class="text-muted me-2 small"><%- __('speech') %></div>
+        <button id="speech_recognition" type="button" class="btn btn-sm btn-success px-2 py-1" title="Click to speak">
+          <i class="material-icons align-middle" style="font-size: 1.1rem;">mic</i>
         </button>
       </div>
     </div>
@@ -203,120 +203,73 @@ $(function(){
 
 
 // SPEECH RECOGNITION //////////////////////////////////////////////////////////
-  const SpeechRecognition =
-    window.SpeechRecognition || window.webkitSpeechRecognition;
-
-  let recognition = null;
-  let isListening = false;
-
-  function resetMicUI() {
-    isListening = false;
-    $("#speech_recognition")
-      .removeClass("btn-danger mic-listening")
-      .addClass("btn-success")
-      .attr("title", "Click to speak");
-  }
-
-  if (SpeechRecognition) {
-    recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.lang = "en-US";
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 3;
-
-    $("#speech_recognition").on('click', function() {
-      if (isListening) {
-        try {
-          recognition.stop();
-        } catch (e) {}
-        resetMicUI();
+  new SpeechController({
+    toggleBtn: "#speech_recognition",
+    toggleIdleClass: "btn-success",
+    toggleActiveClass: "btn-danger mic-listening",
+    continuous: false,
+    interimResults: false,
+    maxAlternatives: 3,
+    onStatusChange: (status) => {
+      if (status === 'listening') {
+        $("#speech_recognition").attr("title", "Listening... Click to stop");
+        $("#output").html(
+          `<div class="bg-light shadow-sm border rounded-3 p-4 text-center">
+             <div class="text-danger mb-2">
+               <i class="material-icons align-middle fs-1">mic</i>
+               <span class="fs-4 ms-2 align-middle fw-bold">Listening...</span>
+             </div>
+             <div class="text-muted">Speak an English word to look it up in the dictionary</div>
+           </div>`
+        );
       } else {
-        try {
-          recognition.start();
-        } catch (e) {
-          console.error("Speech recognition start error:", e);
-        }
+        $("#speech_recognition").attr("title", "Click to speak");
       }
-    });
-
-    recognition.onstart = () => {
-      isListening = true;
-      $("#speech_recognition")
-        .removeClass("btn-success")
-        .addClass("btn-danger mic-listening")
-        .attr("title", "Listening... Click to stop");
-      $("#output").html(
-        `<div class="bg-light shadow-sm border rounded-3 p-4 text-center">
-           <div class="text-danger mb-2">
-             <i class="material-icons align-middle fs-1">mic</i>
-             <span class="fs-4 ms-2 align-middle fw-bold">Listening...</span>
-           </div>
-           <div class="text-muted">Speak an English word to look it up in the dictionary</div>
-         </div>`
-      );
-    };
-
-    recognition.onresult = async (event) => {
+    },
+    onResult: async (transcript, alternatives, rawAlternatives) => {
       let candidateWord = '';
 
-      if (event.results && event.results.length > 0) {
-        const result = event.results[0];
-        // Priority 1: Match against known dictionary vocabulary from alternatives
-        for (let i = 0; i < result.length; i++) {
-          const raw = (result[i].transcript || '').trim().replace(/[.,?!]/g, '');
-          const lc = raw.toLowerCase();
-          if (words[raw] || words[lc]) {
-            candidateWord = words[raw] ? raw : lc;
-            break;
-          }
+      for (const raw of rawAlternatives) {
+        const cleaned = raw.trim().replace(/[.,?!]/g, '');
+        const lc = cleaned.toLowerCase();
+        if (words[cleaned] || words[lc]) {
+          candidateWord = words[cleaned] ? cleaned : lc;
+          break;
         }
-        // Priority 2: Fallback to the top transcript
-        if (!candidateWord && result[0] && result[0].transcript) {
-          candidateWord = result[0].transcript.trim().replace(/[.,?!]/g, '');
-        }
+      }
+
+      if (!candidateWord && rawAlternatives[0]) {
+        candidateWord = rawAlternatives[0].trim().replace(/[.,?!]/g, '');
       }
 
       if (candidateWord) {
         $('#searchInput').val(candidateWord);
         await lookupWord(candidateWord);
       }
-    };
-
-    recognition.onerror = (event) => {
-      console.warn("Speech recognition error:", event.error);
-      resetMicUI();
-      if (event.error === 'no-speech') {
+      return true;
+    },
+    onError: (err) => {
+      if (err === 'no-speech') {
         $("#output").html(
           `<div class="alert alert-warning text-center">
              No speech was detected. Please click the mic and try again.
            </div>`
         );
-      } else if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+      } else if (err === 'not-allowed' || err === 'service-not-allowed') {
         $("#output").html(
           `<div class="alert alert-danger text-center">
              Microphone permission was denied. Please allow microphone access in your browser.
            </div>`
         );
-      } else if (event.error !== 'aborted') {
+      } else if (err !== 'aborted') {
         $("#output").html(
           `<div class="alert alert-secondary text-center">
-             Speech error: ${escapeHtml(event.error)}
+             Speech error: ${escapeHtml(err)}
            </div>`
         );
       }
-    };
-
-    recognition.onend = () => {
-      resetMicUI();
-    };
-
-  } else {
-    // SpeechRecognition not supported in browser
-    $("#speech_recognition")
-      .prop("disabled", true)
-      .addClass("disabled")
-      .attr("title", "Speech recognition is not supported in this browser.");
-  }
+    }
+  });
 
 });
 </script>

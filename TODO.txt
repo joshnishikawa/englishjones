@@ -10,9 +10,6 @@
 [ ] Speaking Slots: Pull lever for random sentence parts
 [ ] Audio samples for all static vocab
 
-code an activity format to practice dialogs
-labelled diagrams for: clothes, body, school, kitchen, tools, maps, around town
-
 ////////// IDEAS FOR STUDENT ACTIVITIES ////////////////////////////////////////
 
 Sight Words: Show a written word. User selects the meaning from 3 images.

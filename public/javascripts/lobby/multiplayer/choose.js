@@ -107,12 +107,7 @@
 
     isListening = true;
     setSpeakButtonState(true, 'Listening...');
-    try {
-      recognition.start();
-    } catch (e) {
-      isListening = false;
-      setSpeakButtonState(true, '');
-    }
+    recognition.start();
   }
 
   function hasRoundStarted() {
@@ -122,85 +117,61 @@
   function stopListening() {
     isListening = false;
     if (recognition) {
-      try {
-        recognition.stop();
-      } catch (e) {
-        // no-op
-      }
+      recognition.stop();
     }
     setSpeakButtonState(true, '');
   }
 
   /**
-   * Create and configure a SpeechRecognition instance.
-   * NOTE: recognition.lang is hard-coded to 'en-US'.
-   *       maxAlternatives = 3 gives findRecognizedWord more chances.
+   * Create and configure a SpeechController instance.
    */
   function initializeSpeech() {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      speechSupported = false;
-      $('#choose-unsupportedAlert').show();
-      $('#choose-listen-btn, #choose-stop-btn, #choose-speak-btn').prop('disabled', true);
-      return;
-    }
-
-    $('#choose-unsupportedAlert').hide();
-    speechSupported = true;
-    recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.lang = 'en-US';
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 3;
-
-    /** On successful recognition, attempt to match a word from all alternatives. */
-    recognition.onresult = function(event) {
-      const result = event.results[event.results.length - 1];
-      let recognizedWord = null;
-      let heardText = result[0].transcript;
-
-      // Check all alternatives (maxAlternatives=3) for a match
-      for (let i = 0; i < result.length; i++) {
-        recognizedWord = findRecognizedWord(result[i].transcript);
-        if (recognizedWord) {
-          heardText = result[i].transcript;
-          break;
-        }
-      }
-
-      $('#choose-heard').text('Heard: ' + heardText);
-      if (!recognizedWord) {
-        setStatus('Not recognized as an available word. Try again.');
-        return;
-      }
-
-      showSelectedImage(recognizedWord);
-      currentSocket.emit('choose/selectimg', {
-        roomname: currentPlayer.roomname,
-        word: recognizedWord,
-      });
-    };
-
-    recognition.onend = function() {
-      // Only restart if the user explicitly clicked Start and has not clicked Stop/selected word
-      if (isListening && isChooser() && !selectedWord) {
-        try {
-          recognition.start();
-        } catch (e) {
+    recognition = new SpeechController({
+      unsupportedAlert: '#choose-unsupportedAlert',
+      continuous: false,
+      interimResults: false,
+      maxAlternatives: 3,
+      shouldRestart: () => isListening && isChooser() && !selectedWord,
+      onStatusChange: (status) => {
+        if (status === 'stopped' || status === 'error') {
           isListening = false;
           setSpeakButtonState(true, '');
         }
-      } else {
-        isListening = false;
-        setSpeakButtonState(true, '');
-      }
-    };
+      },
+      onResult: (transcript, alternatives, rawAlternatives) => {
+        let recognizedWord = null;
+        let heardText = rawAlternatives[0] || transcript;
 
-    recognition.onerror = function(event) {
-      isListening = false;
-      console.error("Speech recognition error:", event ? event.error : "unknown");
-      setSpeakButtonState(true, '');
-    };
+        for (const raw of rawAlternatives) {
+          recognizedWord = findRecognizedWord(raw);
+          if (recognizedWord) {
+            heardText = raw;
+            break;
+          }
+        }
+
+        $('#choose-heard').text('Heard: ' + heardText);
+        if (!recognizedWord) {
+          setStatus('Not recognized as an available word. Try again.');
+          return true;
+        }
+
+        showSelectedImage(recognizedWord);
+        currentSocket.emit('choose/selectimg', {
+          roomname: currentPlayer.roomname,
+          word: recognizedWord,
+        });
+        return true;
+      }
+    });
+
+    speechSupported = recognition.isSupported;
+    if (!speechSupported) {
+      $('#choose-unsupportedAlert').show();
+      $('#choose-listen-btn, #choose-stop-btn, #choose-speak-btn').prop('disabled', true);
+    } else {
+      $('#choose-unsupportedAlert').hide();
+    }
   }
 
   /* ── Slideshow (guesser sees a fast preview of all images) ── */
@@ -252,7 +223,8 @@
     stopSlideshow();
     stopListening();
     if (recognition) {
-      try { recognition.abort(); } catch (e) {}
+      recognition.destroy();
+      recognition = null;
     }
     if (!listenersAttached) return;
     $('#choose-listen-btn, #choose-stop-btn, #choose-speak-btn').off('click');

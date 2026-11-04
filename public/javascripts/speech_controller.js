@@ -2,35 +2,40 @@
 // speech_controller.js — Reusable, auto-recovering Web Speech API controller
 //
 // USAGE:
-//   Include this script in your EJS/HTML template:
+//   Loaded globally via views/head.ejs:
 //     <script src="/javascripts/speech_controller.js"></script>
 //
-//   Then instantiate with your activity's commands:
+//   Instantiate with your activity's configuration:
 //     const voice = new SpeechController({
-//       listenBtn: '#listen',                  // Optional selector or element
-//       stopBtn: '#stop',                      // Optional selector or element
-//       transcriptEl: '#speechTranscript',     // Optional selector or element
-//       unsupportedAlert: '#unsupportedAlert', // Optional selector or element
+//       listenBtn: '#listen',                  // Optional start button selector/element
+//       stopBtn: '#stop',                      // Optional stop button selector/element
+//       toggleBtn: '#MIC_TOGGLE',              // Optional single toggle button selector/element
+//       holdSelector: '.push-to-talk',         // Optional push-to-talk selector (mousedown/touchstart)
+//       transcriptEl: '#speechTranscript',     // Optional live transcript element
+//       unsupportedAlert: '#unsupportedAlert', // Optional unsupported browser alert element
 //       lang: 'en-US',                         // Default 'en-US'
+//       continuous: true,                      // Default true (auto-restarting continuous mode)
+//       interimResults: true,                  // Default true
+//       maxAlternatives: 3,                    // Default 3 alternatives per utterance
 //       echoWindowMs: 700,                     // Default 700ms duplicate echo protection
-//       vocab: ['turn left', 'go straight', ...], // Optional SpeechGrammarList words
-//       commands: [
-//         {
-//           id: 'turnLeft',
-//           regex: /\b(turn (to the )?left|turn left|left)\b/i,
-//           action: () => turnLeft()
-//         },
-//         {
-//           id: 'goStraight',
-//           regex: /\b(go straight|straight)\b/i,
-//           action: () => goStraight()
-//         }
-//       ]
+//       vocab: ['turn left', 'go straight'],   // Optional SpeechGrammarList hint words
+//       commands: [                            // Optional regex command table
+//         { id: 'turnLeft', regex: /\b(turn left|left)\b/i, action: () => turnLeft() }
+//       ],
+//       onInterim: (text, alternatives) => {}, // Optional interim speech hook
+//       onResult: (text, alternatives, rawAlternatives, event) => {}, // Optional final speech hook
+//       onStatusChange: (status, detail) => {},// 'listening' | 'stopped' | 'reconnecting' | 'error'
+//       onError: (error, event) => {},         // Optional custom error handler
+//       onNoMatch: (event) => {},              // Optional no-match handler
+//       shouldRestart: () => true              // Optional guard before auto-restart
 //     });
 //
 // GUARANTEES & ARCHITECTURE:
-//   - Zero Double-Triggers: Actions ONLY execute on finalized speech (res.isFinal).
-//   - Real-Time Interim Feedback: Displays "Listening: ..." while speaking without triggering actions.
+//   - Singleton Cleanup: Constructing a new SpeechController automatically stops/cleans up
+//     any previous active controller (unless allowMultiple: true), preventing zombie mics on AJAX tabs.
+//   - Zero Double-Triggers: Command actions ONLY execute on finalized speech (res.isFinal).
+//   - Multi-Alternative Matching: Checks all recognition alternatives against commands & custom hooks.
+//   - Real-Time Interim Feedback: Displays "Listening: ..." while speaking without triggering commands.
 //   - Engine Echo Protection: Filters out browser trailing audio echoes within echoWindowMs.
 //   - Auto-Recovery Lifecycle: Handles silence timeouts, exponential backoff retries, and clean instance recreation.
 //   - Watchdog & Visibility: Auto-resumes listening when tab regains focus or after silent browser drops.
@@ -40,12 +45,23 @@
 
 class SpeechController {
   constructor(options = {}) {
+    if (!options.allowMultiple && SpeechController.activeInstance && SpeechController.activeInstance !== this) {
+      try {
+        SpeechController.activeInstance.destroy();
+      } catch (e) {}
+    }
+    SpeechController.activeInstance = this;
+
     this.options = Object.assign({
       lang: 'en-US',
       echoWindowMs: 700,
       continuous: true,
       interimResults: true,
-      maxAlternatives: 1,
+      maxAlternatives: 3,
+      toggleIdleClass: 'btn-outline-primary',
+      toggleActiveClass: 'btn-danger mic-listening',
+      toggleIdleText: 'Start Mic',
+      toggleActiveText: 'Stop Mic',
       commands: [],
       vocab: []
     }, options);
@@ -63,6 +79,7 @@ class SpeechController {
     this.restartTimeout = null;
     this.restartAttempts = 0;
     this.watchdogInterval = null;
+    this.activeHoldTarget = null;
 
     this.processedUtterances = new Set();
     this.lastExecutedCommandId = null;
@@ -73,8 +90,12 @@ class SpeechController {
     this.isExecutingQueue = false;
 
     // Cache DOM Elements if provided
-    this.listenBtn = this._getElement(this.options.listenBtn);
-    this.stopBtn = this._getElement(this.options.stopBtn);
+    this.listenBtns = this._getElements(this.options.listenBtn);
+    this.stopBtns = this._getElements(this.options.stopBtn);
+    this.toggleBtns = this._getElements(this.options.toggleBtn);
+    this.listenBtn = this.listenBtns[0] || null;
+    this.stopBtn = this.stopBtns[0] || null;
+    this.toggleBtn = this.toggleBtns[0] || null;
     this.transcriptEl = this._getElement(this.options.transcriptEl);
     this.unsupportedAlert = this._getElement(this.options.unsupportedAlert);
 
@@ -85,9 +106,14 @@ class SpeechController {
     this._initWatchdog();
 
     if (!this.isSupported) {
-      if (this.unsupportedAlert) this.unsupportedAlert.style.display = 'block';
-      if (this.listenBtn) this.listenBtn.disabled = true;
-      if (this.stopBtn) this.stopBtn.disabled = true;
+      if (this.unsupportedAlert) {
+        this.unsupportedAlert.classList.remove('d-none');
+        this.unsupportedAlert.style.display = 'block';
+      }
+      [...this.listenBtns, ...this.stopBtns, ...this.toggleBtns].forEach(btn => {
+        btn.disabled = true;
+        btn.classList.add('disabled');
+      });
     }
   }
 
@@ -95,29 +121,67 @@ class SpeechController {
     if (!target) return null;
     if (typeof target === 'string') return document.querySelector(target);
     if (target instanceof HTMLElement) return target;
-    if (window.jQuery && target instanceof window.jQuery) return target[0];
+    if (window.jQuery && target instanceof window.jQuery) return target[0] || null;
     return null;
   }
 
+  _getElements(target) {
+    if (!target) return [];
+    if (typeof target === 'string') return Array.from(document.querySelectorAll(target));
+    if (target instanceof HTMLElement) return [target];
+    if (window.jQuery && target instanceof window.jQuery) return target.toArray();
+    return [];
+  }
+
   _bindEvents() {
-    if (this.listenBtn) {
-      this.listenBtn.addEventListener('click', () => this.start());
-    }
-    if (this.stopBtn) {
-      this.stopBtn.addEventListener('click', () => this.stop());
+    this._boundListeners = [];
+
+    const addListener = (el, evt, fn) => {
+      if (!el) return;
+      el.addEventListener(evt, fn);
+      this._boundListeners.push({ el, evt, fn });
+    };
+
+    this.listenBtns.forEach(btn => addListener(btn, 'click', () => this.start()));
+    this.stopBtns.forEach(btn => addListener(btn, 'click', () => this.stop()));
+    this.toggleBtns.forEach(btn => addListener(btn, 'click', () => this.toggle()));
+
+    if (this.options.holdSelector) {
+      const onHoldStart = (e) => {
+        const target = e.target.closest(this.options.holdSelector);
+        if (!target) return;
+        this.activeHoldTarget = target;
+        this.start();
+      };
+      const onHoldEnd = () => {
+        if (!this.activeHoldTarget) return;
+        this.stop();
+      };
+      addListener(document, 'mousedown', onHoldStart);
+      addListener(document, 'mouseup', onHoldEnd);
+      addListener(document, 'touchstart', onHoldStart);
+      addListener(document, 'touchend', onHoldEnd);
     }
 
     this._onVisibilityChange = () => {
-      if (!document.hidden && this.isListening && !this.isAudioActive) {
+      if (!document.hidden && this.isListening && !this.isAudioActive && this._canAutoRestart()) {
         this._scheduleRestart(150);
       }
     };
     document.addEventListener('visibilitychange', this._onVisibilityChange);
   }
 
+  _canAutoRestart() {
+    if (!this.isListening) return false;
+    if (typeof this.options.shouldRestart === 'function') {
+      return Boolean(this.options.shouldRestart());
+    }
+    return this.options.continuous !== false;
+  }
+
   _initWatchdog() {
     this.watchdogInterval = setInterval(() => {
-      if (this.isListening && !this.isAudioActive && !this.restartTimeout) {
+      if (this.isListening && !this.isAudioActive && !this.restartTimeout && this._canAutoRestart()) {
         this._scheduleRestart(100);
       }
     }, 2500);
@@ -178,7 +242,7 @@ class SpeechController {
     rec.continuous = this.options.continuous !== false;
     rec.interimResults = this.options.interimResults !== false;
     rec.lang = this.options.lang || 'en-US';
-    rec.maxAlternatives = this.options.maxAlternatives || 1;
+    rec.maxAlternatives = this.options.maxAlternatives || 3;
 
     rec.onstart = () => {
       this.isAudioActive = true;
@@ -190,12 +254,17 @@ class SpeechController {
 
     rec.onresult = (event) => this._handleResult(event);
 
+    rec.onnomatch = (event) => {
+      if (this.options.onNoMatch) this.options.onNoMatch(event);
+    };
+
     rec.onend = () => {
       this.isAudioActive = false;
       this.processedUtterances.clear();
-      if (this.isListening) {
+      if (this._canAutoRestart()) {
         this._scheduleRestart(150);
       } else {
+        this.isListening = false;
         this._updateUI(false);
         this.setTranscript('Voice controls stopped.', 'text-muted');
         if (this.options.onStatusChange) this.options.onStatusChange('stopped');
@@ -203,7 +272,12 @@ class SpeechController {
     };
 
     rec.onerror = (e) => {
-      console.warn('SpeechController: Speech recognition error:', e.error);
+      if (e.error !== 'no-speech' && e.error !== 'aborted') {
+        console.warn('SpeechController: Speech recognition error:', e.error);
+      }
+      if (this.options.onError) {
+        this.options.onError(e.error, e);
+      }
       if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
         this.stop();
         this.setTranscript('Microphone access denied.', 'text-danger');
@@ -218,16 +292,16 @@ class SpeechController {
   }
 
   _scheduleRestart(delay = 150) {
-    if (!this.isListening) return;
+    if (!this._canAutoRestart()) return;
     if (this.restartTimeout) clearTimeout(this.restartTimeout);
     this.restartTimeout = setTimeout(() => {
       this.restartTimeout = null;
-      if (!this.isListening || this.isAudioActive) return;
+      if (!this._canAutoRestart() || this.isAudioActive) return;
       this.restartAttempts++;
       try {
         if (this.restartAttempts > 3) {
           // Re-instantiate fresh SpeechRecognition instance on repeated failures
-          try { if (this.recognition) this.recognition.abort(); } catch(e) {}
+          try { if (this.recognition) this.recognition.abort(); } catch (e) {}
           this.recognition = this._createRecognition();
         }
         if (this.recognition) {
@@ -275,20 +349,30 @@ class SpeechController {
     return null;
   }
 
+  _matchCommandFromAlternatives(alternatives) {
+    for (const alt of alternatives) {
+      const cmd = this._matchCommand(alt);
+      if (cmd) return { cmd, transcript: alt };
+    }
+    return null;
+  }
+
   _handleResult(event) {
-    if (!this.isListening) return;
+    if (!this.isListening && this.options.continuous !== false) return;
 
     // 1. Show real-time interim results as "Listening: ..." for visual feedback while speaking
     let interimText = '';
+    let interimAlternatives = [];
     for (let i = event.resultIndex; i < event.results.length; ++i) {
       const res = event.results[i];
       if (!res.isFinal && res[0]) {
         interimText = this._normalizeTranscript(res[0].transcript);
+        interimAlternatives = Array.from(res).map(a => this._normalizeTranscript(a.transcript)).filter(Boolean);
       }
     }
     if (interimText) {
       this.setTranscript(`Listening: "${interimText}"`, 'text-muted');
-      if (this.options.onInterim) this.options.onInterim(interimText);
+      if (this.options.onInterim) this.options.onInterim(interimText, interimAlternatives, event);
     }
 
     // 2. ONLY execute actions on finalized speech results (res.isFinal === true)
@@ -299,12 +383,25 @@ class SpeechController {
       if (this.processedUtterances.has(i)) continue;
       this.processedUtterances.add(i);
 
-      const rawText = res[0] ? res[0].transcript : '';
-      const transcript = this._normalizeTranscript(rawText);
-      if (!transcript) continue;
+      const rawAlternatives = Array.from(res).map(a => (a && a.transcript ? a.transcript.trim() : '')).filter(Boolean);
+      const alternatives = rawAlternatives.map(raw => this._normalizeTranscript(raw)).filter(Boolean);
+      const transcript = alternatives[0] || '';
+      if (!transcript && rawAlternatives.length === 0) continue;
 
       // Update transcript with confirmed finalized speech
-      this.setTranscript(`Heard: "${transcript}"`, 'text-muted');
+      this.setTranscript(`Heard: "${transcript || rawAlternatives[0]}"`, 'text-muted');
+
+      // Custom onResult handler for activities with dynamic state/vocab pools
+      if (typeof this.options.onResult === 'function') {
+        try {
+          const handled = this.options.onResult(transcript, alternatives, rawAlternatives, event);
+          if (handled === true) continue;
+        } catch (err) {
+          console.error('SpeechController: onResult callback error:', err);
+        }
+      }
+
+      if (!this.commands || this.commands.length === 0) continue;
 
       // Check for compound phrases like "turn left and go straight"
       const subPhrases = transcript.split(/\s+(?:and then|and|then)\s+|,/i).map(s => s.trim()).filter(Boolean);
@@ -322,8 +419,9 @@ class SpeechController {
         }
       }
 
-      const matchedCmd = this._matchCommand(transcript);
-      if (!matchedCmd) continue;
+      const matchResult = this._matchCommandFromAlternatives(alternatives);
+      if (!matchResult) continue;
+      const { cmd: matchedCmd, transcript: matchedTranscript } = matchResult;
 
       const now = Date.now();
       const elapsed = now - this.lastExecutedCommandTime;
@@ -332,10 +430,10 @@ class SpeechController {
       // Engine Echo / Trailing Repeat deduplication:
       // Prevents browser speech engine echo from re-triggering the same command within echoWindowMs
       if (elapsed < echoWindow) {
-        const isSameCommand = matchedCmd.id === this.lastExecutedCommandId;
+        const isSameCommand = matchedCmd.id && matchedCmd.id === this.lastExecutedCommandId;
         const isExactRepeat = this.lastExecutedTranscript && (
-          transcript === this.lastExecutedTranscript ||
-          this.lastExecutedTranscript.endsWith(transcript)
+          matchedTranscript === this.lastExecutedTranscript ||
+          this.lastExecutedTranscript.endsWith(matchedTranscript)
         );
         if (isSameCommand || isExactRepeat) {
           continue;
@@ -346,10 +444,10 @@ class SpeechController {
       if (typeof matchedCmd.action === 'function') {
         matchedCmd.action();
       }
-      this.lastExecutedCommandId = matchedCmd.id;
+      this.lastExecutedCommandId = matchedCmd.id || matchedTranscript;
       this.lastExecutedCommandTime = Date.now();
-      this.lastExecutedTranscript = transcript;
-      if (this.options.onCommand) this.options.onCommand(matchedCmd, transcript);
+      this.lastExecutedTranscript = matchedTranscript;
+      if (this.options.onCommand) this.options.onCommand(matchedCmd, matchedTranscript);
     }
   }
 
@@ -371,7 +469,9 @@ class SpeechController {
     try {
       this.recognition.start();
     } catch (e) {
-      this._scheduleRestart(200);
+      if (this._canAutoRestart()) {
+        this._scheduleRestart(200);
+      }
     }
 
     this._updateUI(true);
@@ -388,9 +488,10 @@ class SpeechController {
     this.processedUtterances.clear();
 
     if (this.recognition) {
-      try { this.recognition.stop(); } catch(e) {}
+      try { this.recognition.stop(); } catch (e) {}
     }
     this._updateUI(false);
+    if (this.options.onStatusChange) this.options.onStatusChange('stopped');
   }
 
   toggle() {
@@ -407,7 +508,7 @@ class SpeechController {
       this.vocab = vocab;
       if (this.isListening && this.recognition) {
         // Soft recreate to apply new grammar
-        try { this.recognition.abort(); } catch(e) {}
+        try { this.recognition.abort(); } catch (e) {}
         this.recognition = this._createRecognition();
         this._scheduleRestart(100);
       }
@@ -419,36 +520,62 @@ class SpeechController {
     this.transcriptEl.textContent = text;
     if (className) {
       this.transcriptEl.className = this.transcriptEl.className
-        .replace(/\btext-(muted|danger|success|warning)\b/g, '')
+        .replace(/\btext-(muted|danger|success|warning|primary)\b/g, '')
         .trim() + ' ' + className;
     }
   }
 
   _updateUI(listening) {
-    if (this.listenBtn) {
+    this.listenBtns.forEach(btn => {
       if (listening) {
-        this.listenBtn.classList.add('mic-listening', 'btn-success');
-        this.listenBtn.disabled = true;
+        btn.classList.add('mic-listening', 'btn-success');
+        btn.classList.remove('btn-outline-success');
+        btn.disabled = true;
       } else {
-        this.listenBtn.classList.remove('mic-listening');
-        this.listenBtn.disabled = false;
+        btn.classList.remove('mic-listening');
+        btn.disabled = false;
       }
-    }
-    if (this.stopBtn) {
+    });
+
+    this.stopBtns.forEach(btn => {
       if (listening) {
-        this.stopBtn.disabled = false;
-        this.stopBtn.classList.add('btn-danger');
-        this.stopBtn.classList.remove('btn-secondary');
+        btn.disabled = false;
+        btn.classList.add('btn-danger');
+        btn.classList.remove('btn-secondary');
       } else {
-        this.stopBtn.disabled = true;
-        this.stopBtn.classList.remove('btn-danger');
-        this.stopBtn.classList.add('btn-secondary');
+        btn.disabled = true;
+        btn.classList.remove('btn-danger');
+        btn.classList.add('btn-secondary');
       }
-    }
+    });
+
+    const idleClasses = (this.options.toggleIdleClass || '').split(/\s+/).filter(Boolean);
+    const activeClasses = (this.options.toggleActiveClass || '').split(/\s+/).filter(Boolean);
+
+    this.toggleBtns.forEach(btn => {
+      const labelEl = btn.querySelector('#mic-btn-text, .mic-btn-text');
+      if (listening) {
+        idleClasses.forEach(c => btn.classList.remove(c));
+        activeClasses.forEach(c => btn.classList.add(c));
+        if (labelEl && this.options.toggleActiveText) {
+          labelEl.textContent = this.options.toggleActiveText;
+        }
+      } else {
+        activeClasses.forEach(c => btn.classList.remove(c));
+        idleClasses.forEach(c => btn.classList.add(c));
+        if (labelEl && this.options.toggleIdleText) {
+          labelEl.textContent = this.options.toggleIdleText;
+        }
+      }
+    });
   }
 
   destroy() {
     this.stop();
+    if (this.recognition) {
+      try { this.recognition.abort(); } catch (e) {}
+      this.recognition = null;
+    }
     if (this.watchdogInterval) {
       clearInterval(this.watchdogInterval);
       this.watchdogInterval = null;
@@ -456,8 +583,19 @@ class SpeechController {
     if (this._onVisibilityChange) {
       document.removeEventListener('visibilitychange', this._onVisibilityChange);
     }
+    if (this._boundListeners) {
+      this._boundListeners.forEach(({ el, evt, fn }) => {
+        try { el.removeEventListener(evt, fn); } catch (e) {}
+      });
+      this._boundListeners = [];
+    }
+    if (SpeechController.activeInstance === this) {
+      SpeechController.activeInstance = null;
+    }
   }
 }
+
+SpeechController.activeInstance = null;
 
 // Export to global scope
 if (typeof window !== 'undefined') {

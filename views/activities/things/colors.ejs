@@ -52,14 +52,14 @@
     <%- __('activity.speech.unsupported') %>
   </div>
 
-  <div class="text-center pt-4">
-    <div class="mb-3">
-      <button id="listen" class="btn btn-lg btn-success me-2 px-4 shadow">
-        <i class="material-icons align-middle">record_voice_over</i>
+  <div class="text-center pt-3">
+    <div class="mb-2">
+      <button id="listen" class="btn btn-sm btn-success me-2 px-3 shadow-sm">
+        <i class="material-icons align-middle" style="font-size: 1.1rem;">record_voice_over</i>
         <span class="align-middle ms-1"><%- __('activity.speech.start') %></span>
       </button>
-      <button id="stop" class="btn btn-lg btn-secondary px-4 shadow" disabled>
-        <i class="material-icons align-middle">stop</i>
+      <button id="stop" class="btn btn-sm btn-secondary px-3 shadow-sm" disabled>
+        <i class="material-icons align-middle" style="font-size: 1.1rem;">stop</i>
         <span class="align-middle ms-1"><%- __('activity.speech.stop') %></span>
       </button>
     </div>
@@ -91,74 +91,14 @@ $(function(){
     );
   });
 
-  // Check Web Speech API support
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-  if (!SpeechRecognition) {
-    $("#unsupportedAlert").show();
-    $("#listen, #stop").prop("disabled", true);
-    return;
-  }
-
-  const recognition = new SpeechRecognition();
-  recognition.continuous = true;
-  recognition.interimResults = true;
-  recognition.lang = "en-US";
-  recognition.maxAlternatives = 1;
-
-  var isListening = false;
-
-  function startListening() {
-    isListening = true;
-    try {
-      recognition.start();
-    } catch (e) {}
-    $("#listen").addClass("mic-listening btn-success").removeClass("btn-outline-success").prop("disabled", true);
-    $("#stop").prop("disabled", false).addClass("btn-danger").removeClass("btn-secondary");
-    console.log("Speech recognition started.");
-  }
-
-  function stopListening() {
-    isListening = false;
-    try {
-      recognition.stop();
-    } catch (e) {}
-    $("#listen").removeClass("mic-listening").prop("disabled", false);
-    $("#stop").prop("disabled", true).removeClass("btn-danger").addClass("btn-secondary");
-    console.log("Speech recognition stopped.");
-  }
-
-  $("#listen").on("click", startListening);
-  $("#stop").on("click", stopListening);
-
   // Click on color chip to test color change manually
   $(document).on("click", ".color-chip", function() {
     const selectedColor = $(this).text().trim();
     $("#target").css("background-color", selectedColor);
-    console.log(`Manual select color: ${selectedColor}`);
   });
 
-  recognition.onresult = (event) => {
-    let interimTranscript = '';
-    let finalTranscript = '';
-
-    for (let i = event.resultIndex; i < event.results.length; ++i) {
-      const transcriptChunk = event.results[i][0].transcript;
-      const confidence = event.results[i][0].confidence;
-      
-      if (event.results[i].isFinal) {
-        finalTranscript += transcriptChunk;
-        console.log(`[Speech Result Final] "${transcriptChunk}" (Confidence: ${confidence.toFixed(2)})`);
-      } else {
-        interimTranscript += transcriptChunk;
-        console.log(`[Speech Result Interim] "${transcriptChunk}"`);
-      }
-    }
-
-    const spokenText = (finalTranscript || interimTranscript).toLowerCase().trim();
-    if (!spokenText) return;
-
-    // Check for matched color in spoken text
+  function applySpokenColor(spokenText) {
+    if (!spokenText) return false;
     let matchedColor = null;
 
     for (let color of vocab) {
@@ -181,30 +121,24 @@ $(function(){
 
     if (matchedColor) {
       $("#target").css("background-color", matchedColor);
-      console.log(`Matched color: "${matchedColor}" from speech input: "${spokenText}"`);
+      return true;
     }
-  };
+    return false;
+  }
 
-  recognition.onend = () => {
-    console.log("Speech recognition onend event fired.");
-    if (isListening) {
-      try {
-        recognition.start();
-        console.log("Speech recognition auto-restarted after browser silence timeout.");
-      } catch (e) {}
-    } else {
-      stopListening();
+  new SpeechController({
+    listenBtn: "#listen",
+    stopBtn: "#stop",
+    unsupportedAlert: "#unsupportedAlert",
+    vocab: vocab,
+    onInterim: (interimText) => applySpokenColor(interimText),
+    onResult: (transcript, alternatives) => {
+      for (const alt of alternatives) {
+        if (applySpokenColor(alt)) return true;
+      }
+      return false;
     }
-  };
-
-  recognition.onerror = (event) => {
-    console.error(`Speech recognition error: ${event.error}`);
-    if (event.error === "not-allowed") {
-      stopListening();
-    } else if (event.error === "no-speech") {
-      console.log("No speech detected during window.");
-    }
-  };
+  });
 });
 </script>
 

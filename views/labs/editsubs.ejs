@@ -9,58 +9,45 @@ $(function(){
   var JAsubobj = <%- JSON.stringify(JAsubobj) %>;
   var ENsubobj = <%- JSON.stringify(ENsubobj) %>;
 
-  const SpeechRecognition =
-    window.SpeechRecognition || window.webkitSpeechRecognition;
-  const SpeechGrammarList =
-    window.SpeechGrammarList || window.webkitSpeechGrammarList;
-  const SpeechRecognitionEvent =
-    window.SpeechRecognitionEvent || window.webkitSpeechRecognitionEvent;
-
-  const j_recog = new SpeechRecognition();
-  j_recog.continuous = false;
-  j_recog.lang = "ja-JP";
-  j_recog.interimResults = false;
-  j_recog.maxAlternatives = 1;
-
-  j_recog.onresult = (event) => {
-    // replace the text of the current line with the recognized text
-    var text = event.results[0][0].transcript;
-    $(".sub").each(function(){
-      if ($(this).find(".rec").is(":focus")){
-        console.log('foundit');
-        $(this).find(".txt").text(text);
-      }
-    });
-  }
-  
-  j_recog.onnomatch = (event) => {
-    var msg = $(`<div class="alert text-white bg-warning" style="position:fixed;bottom:30px;right:0px;">Huh?</div>`);
-    $("body").append(msg);
-    msg.fadeOut(3000, function(){msg.remove();});
-  };
-
-  j_recog.onerror = (event) => {
-    var msg = $(`<div class="alert text-white bg-danger" style="position:fixed;bottom:30px;right:0px;">${event}</div>`);
-    $("body").append(msg);
-    msg.fadeOut(3000, function(){msg.remove();});
-  };
-
-
   for (let key in JAsubobj){
     var line = $(`<div class="sub d-flex">
       <div class="key alert-secondary rounded-3 border border-secondary" style="min-width:30px;">${key}</div>
       <div class="alert-primary rounded-3 border border-primary p-1">${ENsubobj[key].text}</div>
-      <button class="rec btn btn-primary" style="min-width:30px;"><i class="material-icons">mic</i></button>
+      <button class="rec btn btn-sm btn-primary px-1 py-0" style="min-width:28px;"><i class="material-icons align-middle" style="font-size: 1.1rem;">mic</i></button>
       <div contenteditable="true" class="txt alert-success rounded-3 border border-success w-100 p-1">${JAsubobj[key].text}</div>
     </div>`);
     $("#subs").append(line);
   }
 
-
-  $(".rec").on('mousedown', function(){
-    j_recog.start();
-  }).on('mouseup', function(){
-    j_recog.stop();
+  const voice = new SpeechController({
+    holdSelector: ".rec",
+    continuous: false,
+    interimResults: false,
+    lang: "ja-JP",
+    maxAlternatives: 1,
+    onResult: (transcript, alternatives, rawAlternatives) => {
+      const text = rawAlternatives[0] || transcript;
+      if (voice.activeHoldTarget) {
+        $(voice.activeHoldTarget).closest(".sub").find(".txt").text(text);
+      } else {
+        $(".sub").each(function(){
+          if ($(this).find(".rec").is(":focus")){
+            $(this).find(".txt").text(text);
+          }
+        });
+      }
+      return true;
+    },
+    onNoMatch: () => {
+      var msg = $(`<div class="alert text-white bg-warning" style="position:fixed;bottom:30px;right:0px;">Huh?</div>`);
+      $("body").append(msg);
+      msg.fadeOut(3000, function(){msg.remove();});
+    },
+    onError: (err) => {
+      var msg = $(`<div class="alert text-white bg-danger" style="position:fixed;bottom:30px;right:0px;">${err}</div>`);
+      $("body").append(msg);
+      msg.fadeOut(3000, function(){msg.remove();});
+    }
   });
 
 

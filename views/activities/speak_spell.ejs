@@ -152,70 +152,49 @@
 
 
 // SPEECH RECOGNITION //////////////////////////////////////////////////////////
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
-    const SpeechGrammarList =
-      window.SpeechGrammarList || window.webkitSpeechGrammarList;
-    const SpeechRecognitionEvent =
-      window.SpeechRecognitionEvent || window.webkitSpeechRecognitionEvent;
+    new SpeechController({
+      holdSelector: "#speech_recognition",
+      continuous: false,
+      interimResults: false,
+      maxAlternatives: 3,
+      onStatusChange: (status) => {
+        if (status === 'listening') {
+          $("#output").html("Listening...");
+        } else if (status === 'stopped') {
+          $("#output").html('');
+        }
+      },
+      onResult: async (transcript, alternatives, rawAlternatives) => {
+        let image = '';
+        let audio = '';
+        let EnglishWord = rawAlternatives[0] || transcript;
+        let JapaneseWord = await translate(EnglishWord, { from: "en", to: "ja" });
 
-    var recognition = new SpeechRecognition();
-    // const grammar = `#JSGF V1.0; grammar words; public <word> = ${words.join(" | ")};`;
-    // var speechRecognitionList = new SpeechGrammarList();
-    // speechRecognitionList.addFromString(grammar, 1);
-    // recognition.grammars = speechRecognitionList;
-    recognition.continuous = false;
-    recognition.lang = "en-US";
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-
-    $("#speech_recognition").on('mousedown', () => {
-      recognition.start();
-    }).on('mouseup', () => {
-      $("#output").html('');
-      recognition.stop();
-    });
-
-    recognition.onstart = () => {
-      $("#output").html("Listening...");
-    };
-
-    recognition.onresult = async (event) => {
-      let image = '';
-      let audio = '';
-      let EnglishWord = event.results[0][0].transcript;
-      let conf = Math.round(event.results[0][0].confidence*100);
-      let JapaneseWord = await translate(EnglishWord, { from: "en", to: "ja" });
-
-      if (Object.keys(words).includes(EnglishWord)) {
+        if (Object.keys(words).includes(EnglishWord)) {
           image = words[EnglishWord].image;
           audio = words[EnglishWord].audio;
-        if (JapaneseWord != words[EnglishWord].meaning) {
-          JapaneseWord += `, ${words[EnglishWord].meaning}`;
-        }
-      } else {
-        let lc = EnglishWord.toLowerCase();
-        if (Object.keys(words).includes(lc)) {
-          EnglishWord = lc;
-          image = words[lc].image;
-          audio = words[lc].audio;
-          if (JapaneseWord != words[lc].meaning) {
-            JapaneseWord += `, ${words[lc].meaning}`;
+          if (JapaneseWord != words[EnglishWord].meaning) {
+            JapaneseWord += `, ${words[EnglishWord].meaning}`;
+          }
+        } else {
+          let lc = EnglishWord.toLowerCase();
+          if (Object.keys(words).includes(lc)) {
+            EnglishWord = lc;
+            image = words[lc].image;
+            audio = words[lc].audio;
+            if (JapaneseWord != words[lc].meaning) {
+              JapaneseWord += `, ${words[lc].meaning}`;
+            }
           }
         }
+        let id = EnglishWord.split(' ').join('_');
+        addSSWord({word: EnglishWord, id, meaning: JapaneseWord, image, audio});
+        return true;
+      },
+      onError: (err) => {
+        $("#output").html(`Error occurred in recognition: ${err}`);
       }
-      let id = EnglishWord.split(' ').join('_');
-      addSSWord({word: EnglishWord, id, meaning: JapaneseWord, image, audio});
-    };
-
-    recognition.onerror = (event) => {
-      console.error(event);
-      $("#output").html(`Error occurred in recognition: ${event.error}`);
-    };
-
-    recognition.onend = () => {
-      $("#output").html('');
-    };
+    });
 
 
     function addSSWord(w) {

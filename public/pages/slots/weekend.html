@@ -8,8 +8,9 @@
     overflow: hidden;
     display: inline-block;
     vertical-align: middle;
-    min-width: 160px;
+    min-width: 175px;
     line-height: 2.6rem;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease, transform 0.25s ease;
   }
 
   .inshade {
@@ -21,14 +22,6 @@
   .slot-sentence-col {
     font-size: 1.15rem;
     font-weight: 500;
-  }
-
-  .form-check-input {
-    cursor: pointer;
-  }
-
-  .form-check-label {
-    cursor: pointer;
   }
 
   .slot-reel-item {
@@ -57,37 +50,93 @@
     filter: drop-shadow(0 0 6px rgba(0, 255, 102, 0.95));
   }
 
-  .you-win-badge {
-    font-size: 1.4rem;
-    font-weight: 800;
-    color: #00ff66 !important;
-    text-shadow: 0 0 8px rgba(0, 255, 102, 0.8), 0 0 16px rgba(0, 255, 102, 0.5);
-    display: inline-block;
-    vertical-align: middle;
-  }
-
   /* Active Field & Speech Recognition Highlights */
   .slot-field-active {
     border: 2.5px solid #0d6efd !important;
     box-shadow: 0 0 12px rgba(13, 110, 253, 0.6), inset 0 0 6px rgba(13, 110, 253, 0.2) !important;
     transform: scale(1.02);
-    transition: all 0.25s ease-in-out;
+  }
+
+  .slot-box-hit {
+    border: 2.5px solid #198754 !important;
+    background-color: #d1e7dd !important;
+    box-shadow: 0 0 14px rgba(25, 135, 84, 0.65) !important;
+    transform: scale(1.04);
+  }
+
+  .slot-box-miss {
+    border: 2px solid #adb5bd !important;
+    background-color: #f8f9fa !important;
   }
 
   .slot-row {
-    cursor: pointer;
     transition: background-color 0.25s ease, box-shadow 0.25s ease;
     border-radius: 8px;
-    padding: 4px 6px;
-  }
-
-  .slot-row:hover {
-    background-color: rgba(13, 110, 253, 0.03);
+    padding: 4px 8px;
   }
 
   .slot-row-active {
     background-color: rgba(13, 110, 253, 0.06);
     border-left: 4px solid #0d6efd;
+  }
+
+  /* Pill Chips */
+  .slot-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.65rem;
+    margin: 0.15rem 0.2rem;
+    border-radius: 999px;
+    font-size: 0.92rem;
+    font-weight: 500;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.18s ease;
+    border: 1.5px solid #ced4da;
+    background-color: #ffffff;
+    color: #212529;
+  }
+
+  .slot-chip:hover:not(.slot-chip-hit) {
+    border-color: #0d6efd;
+    background-color: #f0f6ff;
+    transform: translateY(-1px);
+  }
+
+  .slot-chip-selected {
+    background-color: #0d6efd !important;
+    border-color: #0a58ca !important;
+    color: #ffffff !important;
+    font-weight: 600;
+    box-shadow: 0 2px 6px rgba(13, 110, 253, 0.35);
+  }
+
+  .slot-chip-hit {
+    background-color: #d1e7dd !important;
+    border-color: #198754 !important;
+    color: #0f5132 !important;
+    font-weight: 700;
+    cursor: default;
+  }
+
+  .combo-legend {
+    font-size: 0.72rem;
+    color: #6c757d;
+    display: flex;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    justify-content: space-around;
+    width: 100%;
+    margin-top: -2px;
+  }
+
+  .combo-legend span {
+    white-space: nowrap;
+  }
+
+  .combo-legend span.active {
+    color: #198754;
+    font-weight: 700;
   }
 
   .mic-listening {
@@ -105,56 +154,61 @@
       box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
     }
   }
-
-  .speech-badge {
-    transition: all 0.3s ease;
-  }
 </style>
 
 <div class="container-fluid py-1">
   <!-- Game Control & Score Bar -->
-  <div class="d-flex flex-wrap align-items-center justify-content-between mb-2 pb-1 border-bottom gap-2">
-    <div class="d-flex align-items-center me-2">
-      <button id="SPIN" class="btn btn-lg btn-success fw-bold me-2 shadow-sm px-4 disabled" disabled>
+  <div class="d-flex flex-nowrap align-items-center justify-content-between mb-2 pb-1 border-bottom gap-2">
+    <div class="d-flex align-items-center flex-shrink-0 me-2">
+      <button id="SPIN" class="btn btn-success fw-bold me-2 shadow-sm px-3 disabled" disabled>
         <i class="material-icons align-middle me-1 fs-5">casino</i> SPIN
       </button>
-      <button id="RESET_GAME" class="btn btn-lg btn-outline-secondary fw-bold me-2 shadow-sm px-3">
+      <button id="RESET_GAME" class="btn btn-outline-secondary fw-bold me-2 shadow-sm px-3">
         <i class="material-icons align-middle me-1 fs-5">refresh</i> Reset
       </button>
-      <button id="MIC_TOGGLE" class="btn btn-lg btn-outline-primary fw-bold shadow-sm px-3 me-2" title="Toggle Speech Recognition">
-        <i class="material-icons align-middle me-1 fs-5" id="mic-icon">mic</i> <span id="mic-btn-text">Start Mic</span>
+      <button id="MIC_TOGGLE" class="btn btn-sm btn-outline-primary fw-bold shadow-sm px-2 py-1" title="Toggle Speech Recognition">
+        <i class="material-icons align-middle me-1" style="font-size: 1rem;" id="mic-icon">mic</i><span id="mic-btn-text">Mic</span>
       </button>
     </div>
 
-    <div class="text-center flex-grow-1 d-flex align-items-center justify-content-center gap-2">
-      <span id="you-win-text" class="fw-bold fs-4 text-success d-none align-middle ms-2">🎉 You Win!</span>
+    <div class="text-center flex-grow-1 text-nowrap overflow-hidden">
+      <span id="you-win-text" class="fw-bold fs-4 text-success d-none align-middle">🎉 You Win!</span>
     </div>
 
-    <div class="d-flex align-items-center gap-3 fs-6">
-      <div class="fs-3">Score: <strong class="text-success" id="score-checks">0</strong></div>
-      <div id="combo-container" class="combo-svg-wrapper d-inline-flex align-items-center me-2">
-        <svg width="514.26389mm" height="157.86459mm" viewBox="-20 -20 514.26389 157.86459" version="1.1" id="svg5"
-          style="overflow: visible;" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
-          <defs id="defs2" />
-          <path
-            style="fill:none;stroke:#646464;stroke-width:10;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;stroke-dasharray:none;paint-order:markers fill stroke;stroke-opacity:1;"
-            id="quintuple"
-            d="m 430.23366,65.850688 c -25.35843,94.639042 85.15281,5.148803 -12.69047,10.276559 -97.84327,5.127742 21.41688,82.576183 -13.69514,-8.893745 -35.11201,-91.469919 -71.91645,45.886098 4.2264,-15.773171 76.14287,-61.659271 -65.86366,-54.2170217 16.30723,-0.854617 82.17087,53.362396 31.21045,-79.394061 5.85198,15.244974 z" />
-          <path
-            style="fill:none;stroke:#646464;stroke-width:10;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;stroke-dasharray:none;paint-order:markers fill stroke;stroke-opacity:1;"
-            id="quadruple"
-            d="m 308.22931,48.390189 c 1.26133,90.697891 80.15769,9.576168 -10.54019,10.837493 -90.6979,1.26133 -9.57616,80.157698 -10.83749,-10.540195 -1.26133,-90.697882 -80.15771,-9.576168 10.54018,-10.837496 90.69789,-1.261328 9.57618,-80.157684 10.8375,10.540198 z" />
-          <path id="triple"
-            style="fill:none;stroke:#646464;stroke-width:14.7238;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;paint-order:markers fill stroke;stroke-opacity:1;"
-            transform="matrix(0.04335842,-0.67778481,0.67778481,0.04335842,143.62034,167.69794)"
-            d="M 180.00002,50 C 93.397475,-36.602541 55.358999,105.35898 173.66027,73.660254 291.96154,41.961525 188.03849,-61.961524 156.33976,56.339746 124.64103,174.64102 266.60256,136.60254 180.00002,50 Z" />
-          <path
-            d="m 105.31409,57.86459 c 15.98401,2.550742 26.21508,8.130625 30.73619,16.717051 a 19.40796,19.40796 0 1 1 -34.3457,18.084452 C 97.183469,84.079674 98.372329,72.486705 105.31409,57.86459 Z m 0,0 C 89.330099,55.313848 79.099029,49.734004 74.577929,41.147579 A 19.40796,19.40796 0 1 1 108.92363,23.063123 c 4.52112,8.586428 3.33223,20.179348 -3.60954,34.801467 z"
-            id="double" style="fill:none;stroke:#646464;stroke-width:10;stroke-dasharray:none;stroke-opacity:1;" />
-          <path id="single"
-            style="fill:none;stroke:#646464;stroke-width:10;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;paint-order:markers fill stroke;stroke-opacity:1;"
-            d="M 65.628174,82.550499 A 30.314087,30.314087 0 0 1 35.314087,112.86459 30.314087,30.314087 0 0 1 5,82.550499 30.314087,30.314087 0 0 1 35.314087,52.236412 30.314087,30.314087 0 0 1 65.628174,82.550499 Z" />
-        </svg>
+    <div class="d-flex align-items-center flex-nowrap flex-shrink-0 gap-3 fs-6">
+      <div class="fs-3 text-nowrap">Score: <strong class="text-success" id="score-checks">0</strong></div>
+      <div class="d-flex flex-column align-items-center flex-shrink-0 me-2" title="Unlock 1x, 2x, 3x, 4x, and 5x hits in a single spin to win!">
+        <div id="combo-container" class="combo-svg-wrapper d-inline-flex align-items-center">
+          <svg width="514.26389mm" height="157.86459mm" viewBox="-20 -20 514.26389 157.86459" version="1.1" id="svg5"
+            style="overflow: visible;" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
+            <defs id="defs2" />
+            <path
+              style="fill:none;stroke:#646464;stroke-width:10;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;stroke-dasharray:none;paint-order:markers fill stroke;stroke-opacity:1;"
+              id="quintuple"
+              d="m 430.23366,65.850688 c -25.35843,94.639042 85.15281,5.148803 -12.69047,10.276559 -97.84327,5.127742 21.41688,82.576183 -13.69514,-8.893745 -35.11201,-91.469919 -71.91645,45.886098 4.2264,-15.773171 76.14287,-61.659271 -65.86366,-54.2170217 16.30723,-0.854617 82.17087,53.362396 31.21045,-79.394061 5.85198,15.244974 z" />
+            <path
+              style="fill:none;stroke:#646464;stroke-width:10;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;stroke-dasharray:none;paint-order:markers fill stroke;stroke-opacity:1;"
+              id="quadruple"
+              d="m 308.22931,48.390189 c 1.26133,90.697891 80.15769,9.576168 -10.54019,10.837493 -90.6979,1.26133 -9.57616,80.157698 -10.83749,-10.540195 -1.26133,-90.697882 -80.15771,-9.576168 10.54018,-10.837496 90.69789,-1.261328 9.57618,-80.157684 10.8375,10.540198 z" />
+            <path id="triple"
+              style="fill:none;stroke:#646464;stroke-width:14.7238;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;paint-order:markers fill stroke;stroke-opacity:1;"
+              transform="matrix(0.04335842,-0.67778481,0.67778481,0.04335842,143.62034,167.69794)"
+              d="M 180.00002,50 C 93.397475,-36.602541 55.358999,105.35898 173.66027,73.660254 291.96154,41.961525 188.03849,-61.961524 156.33976,56.339746 124.64103,174.64102 266.60256,136.60254 180.00002,50 Z" />
+            <path
+              d="m 105.31409,57.86459 c 15.98401,2.550742 26.21508,8.130625 30.73619,16.717051 a 19.40796,19.40796 0 1 1 -34.3457,18.084452 C 97.183469,84.079674 98.372329,72.486705 105.31409,57.86459 Z m 0,0 C 89.330099,55.313848 79.099029,49.734004 74.577929,41.147579 A 19.40796,19.40796 0 1 1 108.92363,23.063123 c 4.52112,8.586428 3.33223,20.179348 -3.60954,34.801467 z"
+              id="double" style="fill:none;stroke:#646464;stroke-width:10;stroke-dasharray:none;stroke-opacity:1;" />
+            <path id="single"
+              style="fill:none;stroke:#646464;stroke-width:10;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;paint-order:markers fill stroke;stroke-opacity:1;"
+              d="M 65.628174,82.550499 A 30.314087,30.314087 0 0 1 35.314087,112.86459 30.314087,30.314087 0 0 1 5,82.550499 30.314087,30.314087 0 0 1 35.314087,52.236412 30.314087,30.314087 0 0 1 65.628174,82.550499 Z" />
+          </svg>
+        </div>
+        <div class="combo-legend">
+          <span id="legend-single">1x</span>
+          <span id="legend-double">2x</span>
+          <span id="legend-triple">3x</span>
+          <span id="legend-quadruple">4x</span>
+          <span id="legend-quintuple">5x</span>
+        </div>
       </div>
     </div>
   </div>
@@ -252,13 +306,13 @@
 
     let pools = {};
     let statusMap = {};
+    let selections = {};
     let totalGreenChecks = 0;
     let achievedCombos = new Set();
-
+    let isSpinning = false;
+    let needsFieldClear = false;
     let activeCatKey = 'adj';
-    let recognition = null;
-    let isListening = false;
-    let speechSupported = false;
+    let voice = null;
 
     function toId(str) {
       return str.replace(/ /g, '');
@@ -276,13 +330,9 @@
 
     function setActiveCategory(catKey) {
       clearAllHighlights();
-      // Fields should ONLY be highlighted when the mic is listening
-      if (!isListening) return;
+      if (!voice || !voice.isListening) return;
       if (!catKey || !ORIGINAL_DATA[catKey]) return;
-
-      // Do not highlight if this field already has a selection
-      let selected = $(`input[name="predict_${catKey}"]:checked`).val();
-      if (selected) return;
+      if (selections[catKey]) return;
 
       activeCatKey = catKey;
       $(`.slot-row[data-catkey="${catKey}"]`).addClass('slot-row-active');
@@ -290,155 +340,16 @@
     }
 
     function autoAdvanceActiveCategory() {
-      if (!isListening) {
+      if (!voice || !voice.isListening) {
         clearAllHighlights();
         return;
       }
-      // Find first category in order that still has active pool items and no prediction selected yet
       for (let key in ORIGINAL_DATA) {
-        if (pools[key] && pools[key].length > 0) {
-          let selected = $(`input[name="predict_${key}"]:checked`).val();
-          if (!selected) {
-            setActiveCategory(key);
-            return;
-          }
+        if (pools[key] && pools[key].length > 0 && !selections[key]) {
+          setActiveCategory(key);
+          return;
         }
       }
-      // If all fields have a prediction selected, clear all highlights
-      clearAllHighlights();
-    }
-
-    function matchSpokenOption(transcript) {
-      const spoken = normalizeText(transcript);
-      if (!spoken) return null;
-
-      function checkCategory(catKey) {
-        if (!pools[catKey] || pools[catKey].length === 0) return null;
-        let selected = $(`input[name="predict_${catKey}"]:checked`).val();
-        if (selected) return null; // Already selected
-
-        let items = ORIGINAL_DATA[catKey];
-        for (let item of items) {
-          if (statusMap[catKey][item] !== 'active') continue;
-          let normItem = normalizeText(item);
-          // Check exact match or phrase containment
-          if (spoken === normItem || spoken.includes(normItem) || normItem.includes(spoken)) {
-            return { catKey, item };
-          }
-        }
-        return null;
-      }
-
-      // Priority 1: Check active focused category
-      if (activeCatKey) {
-        let match = checkCategory(activeCatKey);
-        if (match) return match;
-      }
-
-      // Priority 2: Check all other unselected active categories
-      for (let catKey in ORIGINAL_DATA) {
-        if (catKey === activeCatKey) continue;
-        let match = checkCategory(catKey);
-        if (match) return match;
-      }
-
-      return null;
-    }
-
-    function initSpeechRecognition() {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) {
-        speechSupported = false;
-        $("#speech-unsupported-alert").removeClass("d-none");
-        $("#MIC_TOGGLE").prop("disabled", true).addClass("disabled");
-        return;
-      }
-
-      speechSupported = true;
-      recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = false;
-      recognition.lang = 'en-US';
-      recognition.maxAlternatives = 3;
-
-      recognition.onstart = function () {
-        isListening = true;
-        $("#MIC_TOGGLE").removeClass("btn-outline-primary").addClass("btn-danger mic-listening");
-        $("#mic-icon").text("mic");
-        $("#mic-btn-text").text("Stop Mic");
-        autoAdvanceActiveCategory();
-      };
-
-      recognition.onend = function () {
-        if (isListening) {
-          try {
-            recognition.start();
-          } catch (e) {
-            isListening = false;
-            resetMicUI();
-          }
-        } else {
-          resetMicUI();
-        }
-      };
-
-      recognition.onerror = function (event) {
-        if (event.error === 'no-speech') return;
-        if (event.error === 'not-allowed') {
-          isListening = false;
-          resetMicUI();
-        }
-      };
-
-      recognition.onresult = function (event) {
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          if (event.results[i].isFinal) {
-            let altCount = event.results[i].length;
-            let matched = null;
-            let heardText = "";
-
-            for (let j = 0; j < altCount; j++) {
-              heardText = event.results[i][j].transcript;
-              let norm = normalizeText(heardText);
-
-              // Check if user spoke "spin"
-              if (norm === 'spin' || norm.includes('spin')) {
-                if (!$("#SPIN").hasClass("disabled")) {
-                  runit();
-                  return;
-                }
-              }
-
-              matched = matchSpokenOption(heardText);
-              if (matched) break;
-            }
-
-            if (matched) {
-              let { catKey, item } = matched;
-              let radioId = `#radio_${catKey}_${toId(item)}`;
-              $(radioId).prop("checked", true).trigger("change");
-              let isAllSelected = updateSpinButtonState();
-              autoAdvanceActiveCategory();
-
-              // Auto spin once all fields have a value after speech is recognized
-              if (isAllSelected) {
-                setTimeout(function () {
-                  if (!$("#SPIN").hasClass("disabled")) {
-                    runit();
-                  }
-                }, 400);
-              }
-            }
-          }
-        }
-      };
-    }
-
-    function resetMicUI() {
-      isListening = false;
-      $("#MIC_TOGGLE").removeClass("btn-danger mic-listening").addClass("btn-outline-primary");
-      $("#mic-icon").text("mic");
-      $("#mic-btn-text").text("Start Mic");
       clearAllHighlights();
     }
 
@@ -455,26 +366,30 @@
     }
 
     function updateSpinButtonState() {
-      let allPoolsEmpty = true;
-      let allSelected = true;
+      let activePoolCount = 0;
+      let selectedCount = 0;
 
       for (let catKey in ORIGINAL_DATA) {
         if (pools[catKey] && pools[catKey].length > 0) {
-          allPoolsEmpty = false;
-          let selected = $(`input[name="predict_${catKey}"]:checked`).val();
-          if (!selected) {
-            allSelected = false;
+          activePoolCount++;
+          if (selections[catKey]) {
+            selectedCount++;
           }
         }
       }
 
-      if (allPoolsEmpty) {
+      if (activePoolCount === 0) {
         $("#SPIN").addClass("disabled").prop("disabled", true);
         $("#RESET_GAME").removeClass("btn-outline-secondary").addClass("btn-success");
         return false;
       }
 
-      if (allSelected) {
+      if (isSpinning) {
+        $("#SPIN").addClass("disabled").prop("disabled", true);
+        return false;
+      }
+
+      if (selectedCount === activePoolCount) {
         $("#SPIN").removeClass("disabled").prop("disabled", false);
         return true;
       } else {
@@ -484,6 +399,8 @@
     }
 
     function initGame() {
+      isSpinning = false;
+      needsFieldClear = false;
       pools = {
         adj: ORIGINAL_DATA.adj.slice(),
         went: ORIGINAL_DATA.went.slice(),
@@ -493,12 +410,14 @@
       };
 
       statusMap = {};
+      selections = {};
       for (let catKey in ORIGINAL_DATA) {
         statusMap[catKey] = {};
+        selections[catKey] = null;
         for (let item of ORIGINAL_DATA[catKey]) {
           statusMap[catKey][item] = 'active';
         }
-        $("#" + catKey).scrollTop(0);
+        $("#" + catKey).scrollTop(0).removeClass("slot-box-hit slot-box-miss");
       }
 
       totalGreenChecks = 0;
@@ -507,147 +426,202 @@
       $("#score-checks").text(0);
       $("#you-win-text").addClass("d-none");
 
-      // Reset Reset button to outline secondary
       $("#RESET_GAME").removeClass("btn-success").addClass("btn-outline-secondary");
 
-      // Reset Combo SVG paths to gray stroke
       $("#single, #double, #triple, #quadruple, #quintuple")
         .removeClass("combo-active")
         .css("stroke", "#646464")
         .attr("stroke", "#646464");
+      $(".combo-legend span").removeClass("active");
 
-      renderAllOptionGroups(true);
+      renderAllOptionGroups();
       updateSpinButtonState();
       autoAdvanceActiveCategory();
     }
 
-    function renderAllOptionGroups(clearChecked = false) {
+    function renderAllOptionGroups() {
       for (let catKey in ORIGINAL_DATA) {
-        renderOptionGroup(catKey, clearChecked);
+        renderOptionGroup(catKey);
       }
     }
 
-    function renderOptionGroup(catKey, clearChecked = false) {
+    function renderOptionGroup(catKey) {
       let groupContainer = $("#group-" + catKey);
-      let currentlyChecked = clearChecked ? null : groupContainer.find(`input[name="predict_${catKey}"]:checked`).val();
-
       groupContainer.empty();
 
-      let items = ORIGINAL_DATA[catKey];
-
-      items.forEach((item) => {
+      ORIGINAL_DATA[catKey].forEach((item) => {
         let st = statusMap[catKey][item];
-        let sanitizedId = `radio_${catKey}_${toId(item)}`;
+        let isSelected = selections[catKey] === item;
 
         if (st === 'active') {
-          let isChecked = (!clearChecked && currentlyChecked === item) ? 'checked' : '';
-          let radioHtml = `
-          <div class="form-check form-check-inline me-2 my-0">
-            <input class="form-check-input" type="radio" name="predict_${catKey}" id="${sanitizedId}" value="${item}" ${isChecked}>
-            <label class="form-check-label text-dark fs-6" for="${sanitizedId}">${item}</label>
-          </div>
-        `;
-          groupContainer.append(radioHtml);
+          let extraClass = isSelected ? 'slot-chip-selected' : '';
+          let iconHtml = isSelected
+            ? `<i class="material-icons fs-6 me-1">radio_button_checked</i>`
+            : '';
+          let chipHtml = `
+            <span class="slot-chip ${extraClass}" data-catkey="${catKey}" data-item="${item}">
+              ${iconHtml}${item}
+            </span>
+          `;
+          groupContainer.append(chipHtml);
         } else if (st === 'green_check') {
-          let badgeHtml = `
-          <span class="text-success fw-bold me-2 my-0 d-inline-flex align-items-center fs-6">
-            <i class="material-icons fs-6 me-1">check_circle</i> ${item}
-          </span>
-        `;
-          groupContainer.append(badgeHtml);
+          let chipHtml = `
+            <span class="slot-chip slot-chip-hit" title="Matched!">
+              <i class="material-icons fs-6 me-1">check_circle</i>${item}
+            </span>
+          `;
+          groupContainer.append(chipHtml);
         }
       });
     }
 
-    function runit() {
-      let roundHits = 0;
+    function selectItem(catKey, item) {
+      if (isSpinning) return;
+      if (!pools[catKey] || statusMap[catKey][item] !== 'active') return;
+
+      if (needsFieldClear) {
+        needsFieldClear = false;
+        $("#adj, #went, #saw, #ate, #enjoyed").stop(true, true).scrollTop(0).removeClass("slot-box-hit slot-box-miss");
+      }
+
+      selections[catKey] = item;
+      $("#" + catKey).removeClass("slot-box-hit slot-box-miss");
+      renderOptionGroup(catKey);
+      let isReady = updateSpinButtonState();
+      autoAdvanceActiveCategory();
+      return isReady;
+    }
+
+    function matchSpokenOption(transcript) {
+      const spoken = normalizeText(transcript);
+      if (!spoken) return null;
+
+      function checkCategory(catKey) {
+        if (!pools[catKey] || pools[catKey].length === 0 || selections[catKey]) return null;
+        for (let item of ORIGINAL_DATA[catKey]) {
+          if (statusMap[catKey][item] !== 'active') continue;
+          let normItem = normalizeText(item);
+          if (spoken === normItem || spoken.includes(normItem) || normItem.includes(spoken)) {
+            return { catKey, item };
+          }
+        }
+        return null;
+      }
+
+      if (activeCatKey) {
+        let match = checkCategory(activeCatKey);
+        if (match) return match;
+      }
 
       for (let catKey in ORIGINAL_DATA) {
-        let pool = pools[catKey];
-        if (pool.length === 0) continue;
+        if (catKey === activeCatKey) continue;
+        let match = checkCategory(catKey);
+        if (match) return match;
+      }
 
-        let selectedItem = $(`input[name="predict_${catKey}"]:checked`).val();
+      return null;
+    }
+
+    function runit() {
+      if (isSpinning) return;
+      isSpinning = true;
+      $("#SPIN").addClass("disabled").prop("disabled", true);
+
+      let roundHits = 0;
+      let hitResults = {};
+      let categoriesOrder = ['adj', 'went', 'saw', 'ate', 'enjoyed'];
+
+      for (let catKey of categoriesOrder) {
+        let pool = pools[catKey];
+        if (!pool || pool.length === 0) continue;
 
         let randIndex = Math.floor(Math.random() * pool.length);
         let hitItem = pool[randIndex];
-
-        pool.splice(randIndex, 1);
-
-        if (selectedItem === hitItem) {
-          statusMap[catKey][hitItem] = 'green_check';
-          totalGreenChecks++;
-          roundHits++;
-
-          // Clear field (slot box) for items we get hits on
-          $("#" + catKey).scrollTop(0);
-        } else {
-          statusMap[catKey][hitItem] = 'removed';
-          spinit(catKey, catKey + '_' + toId(hitItem));
-        }
-
-        renderOptionGroup(catKey);
+        let selIdx = pool.indexOf(selections[catKey]);
+        if (selIdx !== -1) pool.splice(selIdx, 1);
+        hitResults[catKey] = { selected: selections[catKey], hit: hitItem };
       }
 
-      // Light up corresponding combo SVG path and award combo bonus value when first unlocked
-      if (COMBO_MAP[roundHits]) {
-        let comboPathId = COMBO_MAP[roundHits];
-        if (!achievedCombos.has(comboPathId)) {
-          achievedCombos.add(comboPathId);
-          $("#" + comboPathId)
-            .addClass("combo-active")
-            .css("stroke", "#00ff66")
-            .attr("stroke", "#00ff66");
+      let activeCats = categoriesOrder.filter(c => hitResults[c]);
+      activeCats.forEach((catKey, idx) => {
+        setTimeout(() => {
+          let res = hitResults[catKey];
+          let isHit = (res.selected === res.hit);
 
-          // Award bonus equal to the value of the combo (single: +1, double: +2, triple: +3, quadruple: +4, quintuple: +5)
-          totalGreenChecks += roundHits;
+          // Spin the reel to the drawn item
+          spinit(catKey, catKey + '_' + toId(res.hit));
 
-          // Check if all 5 combos have been achieved!
-          if (achievedCombos.size === 5) {
-            $("#you-win-text").removeClass("d-none");
+          // Update chips and field status right when the 500ms reel spin lands
+          setTimeout(() => {
+            if (isHit) {
+              statusMap[catKey][res.selected] = 'green_check';
+              totalGreenChecks++;
+              roundHits++;
+              $("#" + catKey).removeClass("slot-box-miss").addClass("slot-box-hit");
+            } else if (res.selected) {
+              statusMap[catKey][res.selected] = 'removed';
+              $("#" + catKey).removeClass("slot-box-hit").addClass("slot-box-miss");
+            }
+
+            // Clear chip selection for this field after spin (must re-pick next round)
+            selections[catKey] = null;
+
+            renderOptionGroup(catKey);
+            $("#score-checks").text(totalGreenChecks);
+          }, 500);
+        }, idx * 250);
+      });
+
+      setTimeout(() => {
+        let comboBonus = 0;
+        if (COMBO_MAP[roundHits]) {
+          let comboPathId = COMBO_MAP[roundHits];
+          if (!achievedCombos.has(comboPathId)) {
+            achievedCombos.add(comboPathId);
+            $("#" + comboPathId)
+              .addClass("combo-active")
+              .css("stroke", "#00ff66")
+              .attr("stroke", "#00ff66");
+            $("#legend-" + comboPathId).addClass("active");
+
+            comboBonus = roundHits;
+            totalGreenChecks += comboBonus;
+
+            if (achievedCombos.size === 5) {
+              $("#you-win-text").removeClass("d-none");
+            }
           }
         }
-      }
 
-      $("#score-checks").text(totalGreenChecks);
-
-      updateSpinButtonState();
-      autoAdvanceActiveCategory();
+        $("#score-checks").text(totalGreenChecks);
+        isSpinning = false;
+        needsFieldClear = true;
+        renderAllOptionGroups();
+        updateSpinButtonState();
+        autoAdvanceActiveCategory();
+      }, (activeCats.length - 1) * 250 + 550);
     }
 
-    // Set active field on row click
-    $(document).on('click', '.slot-row', function () {
+    // Click on pill chip
+    $(document).off('click.weekendChip').on('click.weekendChip', '.slot-chip', function (e) {
+      e.stopPropagation();
       let catKey = $(this).data('catkey');
-      if (catKey && isListening) {
+      let item = $(this).data('item');
+      if (catKey && item) {
+        selectItem(catKey, item);
+      }
+    });
+
+    // Set active field on row click
+    $(document).off('click.weekendRow').on('click.weekendRow', '.slot-row', function () {
+      let catKey = $(this).data('catkey');
+      if (catKey && voice && voice.isListening) {
         setActiveCategory(catKey);
       }
     });
 
-    $(document).on('change', 'input[type="radio"]', function () {
-      let catKey = $(this).attr('name').replace('predict_', '');
-      updateSpinButtonState();
-      autoAdvanceActiveCategory();
-    });
-
-    $("#MIC_TOGGLE").on('click', function () {
-      if (!speechSupported || !recognition) return;
-      if (isListening) {
-        isListening = false;
-        try {
-          recognition.stop();
-        } catch (e) {}
-        resetMicUI();
-      } else {
-        try {
-          recognition.start();
-        } catch (e) {
-          isListening = false;
-          resetMicUI();
-        }
-      }
-    });
-
     $("#SPIN").on('click', function () {
-      if ($(this).hasClass("disabled")) return;
+      if ($(this).hasClass("disabled") || isSpinning) return;
       runit();
     });
 
@@ -657,6 +631,57 @@
 
     populateSlotReels();
     initGame();
-    initSpeechRecognition();
+
+    const allVocab = [].concat(
+      ORIGINAL_DATA.adj,
+      ORIGINAL_DATA.went,
+      ORIGINAL_DATA.saw,
+      ORIGINAL_DATA.ate,
+      ORIGINAL_DATA.enjoyed,
+      ['spin', 'reset']
+    );
+
+    voice = new SpeechController({
+      toggleBtn: '#MIC_TOGGLE',
+      toggleIdleText: 'Mic',
+      toggleActiveText: 'Stop',
+      unsupportedAlert: '#speech-unsupported-alert',
+      vocab: allVocab,
+      maxAlternatives: 4,
+      onStatusChange: (status) => {
+        if (status === 'listening') {
+          autoAdvanceActiveCategory();
+        } else if (status === 'stopped' || status === 'error') {
+          clearAllHighlights();
+        }
+      },
+      onResult: (transcript, alternatives) => {
+        for (const alt of alternatives) {
+          if (/\bspin\b/i.test(alt)) {
+            if (!$("#SPIN").hasClass("disabled") && !isSpinning) {
+              runit();
+              return true;
+            }
+          }
+          if (/\b(reset|start over)\b/i.test(alt)) {
+            initGame();
+            return true;
+          }
+          const matched = matchSpokenOption(alt);
+          if (matched) {
+            const isReady = selectItem(matched.catKey, matched.item);
+            if (isReady) {
+              setTimeout(() => {
+                if (!$("#SPIN").hasClass("disabled") && !isSpinning) {
+                  runit();
+                }
+              }, 400);
+            }
+            return true;
+          }
+        }
+        return false;
+      }
+    });
   });
 </script>

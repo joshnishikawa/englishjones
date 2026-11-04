@@ -23,7 +23,7 @@
       // load page from query string
       let page = new URLSearchParams(window.location.search).get('page') || 'datetime';
       $(`#${page}`).addClass('active disabled');
-      $('#content').load(`/public/pages/slots/${page}.html`);
+      $('#content').load(`/public/pages/slots/${page}.html?v=${Date.now()}`);
 
       spinit = (slot, id) => {
         id = id.replace(/ /g, '_'); // replace spaces with underscores
