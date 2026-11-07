@@ -44,7 +44,7 @@ function CanvasBuilder(options) {
   // Internal state
   let savedCanvases = []; // Array of saved canvas snapshots
   let currentCanvasIndex = 0; // Index of currently active canvas
-  let z = 1000; // Z-index counter
+  let z = 1; // Z-index counter
   let isDraggingHandle = false;
   let tapHandlerActive = false;
   const self = this; // Reference for passing to CanvasManager
@@ -55,6 +55,7 @@ function CanvasBuilder(options) {
   this.init = function() {
     if (initialized) return;
     initialized = true;
+    $(`#${config.canvasId}`).css('isolation', 'isolate');
     loadFromStorage();
     setupEventHandlers();
     setupMenuDragging();
@@ -132,6 +133,12 @@ function CanvasBuilder(options) {
     if (index >= 0 && index < savedCanvases.length) {
       currentCanvasIndex = index;
       $(`#${config.canvasId}`).html(savedCanvases[index].html);
+      const items = $(`#${config.canvasId} .${config.canvasItemClass}`).toArray();
+      items.sort((a, b) => (parseInt($(a).css('z-index')) || 0) - (parseInt($(b).css('z-index')) || 0));
+      items.forEach((el, i) => {
+        $(el).css('z-index', i + 1);
+      });
+      z = items.length + 1;
       $(`#${config.canvasId} .${config.canvasItemClass}`).each(function () {
         makeTouchable($(this));
         // Ensure drag handles are properly scaled after loading

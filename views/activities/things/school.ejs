@@ -554,6 +554,7 @@
   }
 
   let walkTimer = null;
+  let bounceTimer = null;
   function stepWalk(duration = 350, steps = 4) {
     if (walkTimer) clearInterval(walkTimer);
     let count = 0;
@@ -571,22 +572,27 @@
 
   function bounceBlocked() {
     if (!moverAvatarEl) return;
+    if (bounceTimer) clearTimeout(bounceTimer);
     moverAvatarEl.classList.remove("mover-blocked");
     void moverAvatarEl.offsetWidth;
     moverAvatarEl.classList.add("mover-blocked");
-    setTimeout(() => {
+    bounceTimer = setTimeout(() => {
       if (moverAvatarEl) moverAvatarEl.classList.remove("mover-blocked");
+      bounceTimer = null;
     }, 250);
   }
 
   function goStraight() {
     const moverDir = getMoverDir();
     if (moverPosition === 50 || moverPosition === "start") {
-      moverAngle = 90;
-      moverPosition = 28;
-      stepWalk();
-      updateMoverVisual();
-      return true;
+      if (moverDir === "east") {
+        moverPosition = 28;
+        stepWalk();
+        updateMoverVisual();
+        return true;
+      }
+      bounceBlocked();
+      return false;
     }
 
     if (moverDir === "north") {
@@ -829,20 +835,35 @@
     $("#labelSecret").on("click", () => setMode("secret"));
 
     // Keyboard controls
+    let holdStopped = false;
+    $(document).on("keyup", (e) => {
+      if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
+        holdStopped = false;
+      }
+    });
     $(document).on("keydown", (e) => {
       if ($(e.target).is("input, textarea, [contenteditable='true']")) return;
+      const isRepeat = !!(e.originalEvent && e.originalEvent.repeat);
       if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
         e.preventDefault();
+        if (walkTimer || bounceTimer || (isRepeat && holdStopped)) return;
+        const prevPos = moverPosition;
         goStraight();
+        if (moverPosition === prevPos) holdStopped = true;
       } else if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") {
         e.preventDefault();
+        holdStopped = false;
         turnLeft();
       } else if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") {
         e.preventDefault();
+        holdStopped = false;
         turnRight();
       } else if (e.key === "r" || e.key === "R") {
         e.preventDefault();
-        reset();
+        if (!isRepeat) {
+          holdStopped = false;
+          reset();
+        }
       }
     });
 

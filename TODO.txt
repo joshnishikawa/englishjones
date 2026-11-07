@@ -1,3 +1,6 @@
+[x] Ensure supplies on the canvas are never above the modal overlay.
+[x] Check the same for Shapes and objects
+[x] Fix the keybinds so that holding the up arrow doesn't cause erratic movement.
 [x] Point monitor at correct path (/media/storage/assets/monitor) and add safe fallback in ej.js
 [x] Fix test race condition (tests/frontend_set_color.test.js)
 [x] Verify Supplies & Directions activities (school & town)

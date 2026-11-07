@@ -596,6 +596,7 @@
   }
 
   let walkTimer = null;
+  let bounceTimer = null;
   function stepWalk(duration = 350, steps = 4) {
     if (walkTimer) clearInterval(walkTimer);
     let count = 0;
@@ -613,22 +614,27 @@
 
   function bounceBlocked() {
     if (!moverAvatarEl) return;
+    if (bounceTimer) clearTimeout(bounceTimer);
     moverAvatarEl.classList.remove("mover-blocked");
     void moverAvatarEl.offsetWidth;
     moverAvatarEl.classList.add("mover-blocked");
-    setTimeout(() => {
+    bounceTimer = setTimeout(() => {
       if (moverAvatarEl) moverAvatarEl.classList.remove("mover-blocked");
+      bounceTimer = null;
     }, 250);
   }
 
   function goStraight() {
     const moverDir = getMoverDir();
     if (moverPosition === 50 || moverPosition === "start") {
-      moverAngle = 90;
-      moverPosition = 28;
-      stepWalk();
-      updateMoverVisual();
-      return true;
+      if (moverDir === "east") {
+        moverPosition = 29;
+        stepWalk();
+        updateMoverVisual();
+        return true;
+      }
+      bounceBlocked();
+      return false;
     }
 
     if (moverDir === "north") {
@@ -656,6 +662,50 @@
         return true;
       }
     } else if (moverDir === "east") {
+      const col = moverPosition % 7;
+      const row = Math.floor(moverPosition / 7);
+      const nextCol = (col % 2 === 0) ? col + 1 : col + 2;
+      if (row % 2 === 0 && nextCol <= 5 && canMoveCells.has(row * 7 + nextCol)) {
+        moverPosition = row * 7 + nextCol;
+        stepWalk();
+        updateMoverVisual();
+        return true;
+      }
+    } else if (moverDir === "west") {
+      if (moverPosition === 28 || moverPosition === 29) {
+        moverPosition = "start";
+        stepWalk();
+        updateMoverVisual();
+        return true;
+      }
+      const col = moverPosition % 7;
+      const row = Math.floor(moverPosition / 7);
+      const nextCol = (col % 2 === 0) ? col - 1 : col - 2;
+      if (row % 2 === 0 && nextCol >= 1 && canMoveCells.has(row * 7 + nextCol)) {
+        moverPosition = row * 7 + nextCol;
+        stepWalk();
+        updateMoverVisual();
+        return true;
+      }
+    }
+    bounceBlocked();
+    return false;
+  }
+
+  function goLittleBit() {
+    const moverDir = getMoverDir();
+    if (moverPosition === 50 || moverPosition === "start") {
+      if (moverDir === "east") {
+        moverPosition = 28;
+        stepWalk();
+        updateMoverVisual();
+        return true;
+      }
+      bounceBlocked();
+      return false;
+    }
+
+    if (moverDir === "east") {
       if (moverPosition % 7 < 6 && canMoveCells.has(moverPosition + 1)) {
         moverPosition += 1;
         stepWalk();
@@ -675,6 +725,8 @@
         updateMoverVisual();
         return true;
       }
+    } else {
+      return goStraight();
     }
     bounceBlocked();
     return false;
@@ -751,6 +803,7 @@
       "on your right", "on the right", "to your right", "to the right", "it's on your right", "it is on your right",
       "on your left", "on the left", "to your left", "to the left", "it's on your left", "it is on your left",
       "go straight", "straight", "forward", "ahead", "move forward",
+      "a little bit", "go a little bit", "go straight a little bit", "straight a little bit",
       "go straight one block", "one block",
       "go straight two blocks", "straight two blocks", "two blocks",
       "go straight to blocks", "straight to blocks", "to blocks",
@@ -806,6 +859,11 @@
         id: "turnRight",
         regex: /\b(turn (to the )?right|turn right|right|write)\b/i,
         action: () => voice.enqueue(() => turnRight(), 260)
+      },
+      {
+        id: "littleBit",
+        regex: /\b(a little bit|a little|just a little( bit)?|little bit)\b/i,
+        action: () => voice.enqueue(() => goLittleBit(), 380)
       },
       {
         id: "goStraight",
@@ -871,20 +929,35 @@
     $("#labelSecret").on("click", () => setMode("secret"));
 
     // Keyboard controls
+    let holdStopped = false;
+    $(document).on("keyup", (e) => {
+      if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
+        holdStopped = false;
+      }
+    });
     $(document).on("keydown", (e) => {
       if ($(e.target).is("input, textarea, [contenteditable='true']")) return;
+      const isRepeat = !!(e.originalEvent && e.originalEvent.repeat);
       if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
         e.preventDefault();
+        if (walkTimer || bounceTimer || (isRepeat && holdStopped)) return;
+        const prevPos = moverPosition;
         goStraight();
+        if (moverPosition === prevPos) holdStopped = true;
       } else if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") {
         e.preventDefault();
+        holdStopped = false;
         turnLeft();
       } else if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") {
         e.preventDefault();
+        holdStopped = false;
         turnRight();
       } else if (e.key === "r" || e.key === "R") {
         e.preventDefault();
-        reset();
+        if (!isRepeat) {
+          holdStopped = false;
+          reset();
+        }
       }
     });
 
